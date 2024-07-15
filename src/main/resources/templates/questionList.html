@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Questions</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Questions</h1>
+    <a href="/questions/add">Add First Level Question</a>
+    <div th:each="question : ${questions}" th:if="${question.parent == null}">
+        <div th:text="${question.text}">Question text</div>
+        <a th:href="@{/questions/{id}(id=${question.qId})}">View</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Question Details</title>
+</head>
+
+<body>
+    <h1>Question</h1>
+    <p th:text="${question.text}">Question text</p>
+    <p th:text="'Type: ' + ${question.type}">Question type</p>
+
+    <h2>Answers</h2>
+    <div th:each="answer : ${question.answers}">
+        <div
+            th:if="${question.type == 'choice' and answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}">
+            <p th:text="${answer.text}">Answer text</p>
+            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
+        </div>
+        <!-- Add handling for other answer types -->
+
+        <a th:if="${answer.nextQuestion}" th:href="@{/questions/{id}(id=${answer.nextQuestion.qId})}">Next Question</a>
+        <form
+            th:if="${answer.nextQuestion == null and (!(answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)) or answer.qty == null)}"
+            th:action="@{/questions/answers/{answerId}/nextquestion(answerId=${answer.aId})}" method="post">
+            <input type="text" name="text" placeholder="Next Question Text" required />
+            <select name="type">
+                <option value="choice">Choice</option>
+                <option value="date">Date</option>
+                <option value="time">Time</option>
+                <option value="text">Text</option>
+            </select>
+            <button type="submit">Add Next Question</button>
+        </form>
+    </div>
+
+    <h3>Add Answer</h3>
+    <form th:if="${question.type == 'choice'}" th:action="@{/questions/{id}/answers(id=${question.qId})}"
+        th:object="${newAnswer}" method="post">
+        <input type="text" th:field="*{text}" placeholder="Answer Text" required />
+        <input type="number" th:field="*{qty}" placeholder="Quantity (optional)" />
+        <button type="submit">Add Answer</button>
+    </form>
+
+    <div th:if="${parentQuestion != null}">
+        <a th:href="@{/questions/{id}(id=${parentQuestion.qId})}">Back to Previous Question</a>
+    </div>
+    <div>
+        <a th:href="@{/questions}">Return to First Question</a>
+    </div>
+</body>
+
+</html>

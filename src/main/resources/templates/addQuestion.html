@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add Question</title>
+</head>
+<body>
+    <h1>Add Question</h1>
+    <form th:action="@{/questions/add}" th:object="${question}" method="post">
+        <label>Question Text: </label>
+        <input type="text" th:field="*{text}" />
+        <label>Type: </label>
+        <select name="type">
+            <option value="choice">Choice</option>
+            <option value="date">Date</option>
+            <option value="time">Time</option>
+            <option value="text">Text</option>
+        </select>
+        <button type="submit">Save</button>
+    </form>
+</body>
+</html>
