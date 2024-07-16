@@ -2,9 +2,11 @@ package com.example.booking.user_answer;
 
 import com.example.booking.detail.Detail;
 
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 
 @Entity
+@DiscriminatorValue("UserAnswer")
 public class UserAnswer extends Detail {
     private String text;
 

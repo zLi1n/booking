@@ -14,6 +14,7 @@ public class User {
     private String name;
     private String email;
     private String tel;
+    private String password;
     public Long getuId() {
         return uId;
     }
@@ -37,6 +38,12 @@ public class User {
     }
     public void setTel(String tel) {
         this.tel = tel;
+    }
+    public String getPassword() {
+        return password;
+    }
+    public void setPassword(String password) {
+        this.password = password;
     }
 
 }

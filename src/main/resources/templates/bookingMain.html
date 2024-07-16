@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Booking Main</title>
+</head>
+
+<body>
+    <h1>Welcome to the Booking System</h1>
+    <div>
+        <a th:href="@{/booking/book(userId=${userId})}">Book Now</a>
+        <a th:href="@{/booking/history(userId=${userId})}">View History</a>
+    </div>
+</body>
+
+</html>

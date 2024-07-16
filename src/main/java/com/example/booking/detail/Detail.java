@@ -3,15 +3,20 @@ package com.example.booking.detail;
 import com.example.booking.booking.Booking;
 import com.example.booking.question.Question;
 
+import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 @Entity
-public class Detail {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "dtype")
+public abstract class Detail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long dId;
@@ -23,7 +28,6 @@ public class Detail {
     @ManyToOne
     @JoinColumn(name = "bId", nullable = false)
     private Booking booking;
-
     public Long getdId() {
         return dId;
     }
