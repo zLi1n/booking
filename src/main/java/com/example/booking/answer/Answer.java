@@ -27,6 +27,9 @@ public class Answer {
     @JoinColumn(name = "next_qId")
     private Question nextQuestion;
 
+    private Integer qty;
+    private Integer remainingQty;
+
     public Long getaId() {
         return aId;
     }
@@ -51,4 +54,30 @@ public class Answer {
         this.nextQuestion = nextQuestion;
     }
 
+    public Integer getQty() {
+        return qty;
+    }
+
+    public void setQty(Integer qty) {
+        this.qty = qty;
+    }
+
+    public Integer getRemainingQty() {
+        return remainingQty;
+    }
+
+    public void setRemainingQty(Integer remainingQty) {
+        this.remainingQty = remainingQty;
+    }
+    public void initializeRemainingQty() {
+        if (this.qty != null) {
+            this.remainingQty = this.qty;
+        }
+    }
+
+    public void updateRemainingQty(int requestedQuantity) {
+        if (this.remainingQty != null) {
+            this.remainingQty -= requestedQuantity;
+        }
+    }
 }

@@ -12,10 +12,10 @@
     <p th:text="'Telephone: ' + ${user.tel}">User Telephone</p>
     <h2>Booking History:</h2>
     <div th:each="booking : ${bookings}">
-        <p th:text="'Booking ID: ' + ${booking.bId}">Booking ID</p>
+        <h4 th:text="'Booking ID: ' + ${booking.bId}">Booking ID</h4>
         <p th:text="'Date: ' + ${booking.date}">Booking Date</p>
         <p th:text="'Status: ' + ${booking.status}">Booking Status</p>
-        <h3>Details:</h3>
+        <h5>Details:</h5>
         <div th:each="detail : ${booking.details}">
             <p th:text="'Question text: ' + ${detail.question?.text}">Question</p>
             <p th:if="${detail instanceof T(com.example.booking.user_answer.UserAnswer)}"

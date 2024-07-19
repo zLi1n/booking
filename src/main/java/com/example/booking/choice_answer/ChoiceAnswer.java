@@ -7,7 +7,6 @@ import jakarta.persistence.Entity;
 @Entity
 public class ChoiceAnswer extends Answer {
     private String text;
-    private Integer qty;
 
 
     public String getText() {
@@ -16,14 +15,6 @@ public class ChoiceAnswer extends Answer {
 
     public void setText(String text) {
         this.text = text;
-    }
-
-    public Integer getQty() {
-        return qty;
-    }
-
-    public void setQty(Integer qty) {
-        this.qty = qty;
     }
 
 }

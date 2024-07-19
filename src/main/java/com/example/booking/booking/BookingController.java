@@ -2,6 +2,7 @@ package com.example.booking.booking;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -11,18 +12,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.booking.answer.Answer;
 import com.example.booking.answer.AnswerService;
 import com.example.booking.detail.Detail;
 import com.example.booking.detail.DetailService;
-import com.example.booking.detail.DetailService.DetailType;
 import com.example.booking.question.Question;
 import com.example.booking.question.QuestionService;
 import com.example.booking.user.User;
 import com.example.booking.user.UserService;
-import com.example.booking.user_answer.UserAnswer;
 import com.example.booking.user_select.UserSelect;
+
+import jakarta.transaction.Transactional;
 
 @Controller
 @RequestMapping("/booking")
@@ -37,6 +39,9 @@ public class BookingController {
     private DetailService detailService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private BookingValidationService bookingValidationService;
+
 
     @GetMapping("/main")
     public String bookingMain(@RequestParam Long userId, Model model) {
@@ -65,7 +70,22 @@ public class BookingController {
         Optional<Question> questionOpt = questionService.getQuestionById(id);
         if (questionOpt.isPresent()) {
             Question question = questionOpt.get();
+            List<Answer> allAnswers = answerService.getAnswersByQuestion(id);
+            List<Answer> availableAnswers = allAnswers.stream()
+                .filter(answer -> bookingValidationService.isAvailableAnswer(bookingId, answer))
+                .collect(Collectors.toList());
+            
+            if (availableAnswers.isEmpty()) {
+                Answer nextAvailableAnswer = findNextAvailableAnswer(bookingId, question);
+                if (nextAvailableAnswer != null && nextAvailableAnswer.getNextQuestion() != null) {
+                    return "redirect:/booking/question/" + nextAvailableAnswer.getNextQuestion().getqId() + "?bookingId=" + bookingId;
+                } else {
+                    return "redirect:/booking/confirmation?bookingId=" + bookingId;
+                }
+            }
+            
             model.addAttribute("question", question);
+            model.addAttribute("availableAnswers", availableAnswers);
             model.addAttribute("bookingId", bookingId);
             return "viewQuestionUser";
         } else {
@@ -73,31 +93,58 @@ public class BookingController {
         }
     }
 
+    private Answer findNextAvailableAnswer(Long bookingId, Question question) {
+        List<Answer> answers = answerService.getAnswersByQuestion(question.getqId());
+        for (Answer answer : answers) {
+            if (bookingValidationService.isAvailableAnswer(bookingId, answer)) {
+                return answer;
+            }
+            if (answer.getNextQuestion() != null) {
+                Answer nextAvailable = findNextAvailableAnswer(bookingId, answer.getNextQuestion());
+                if (nextAvailable != null) {
+                    return nextAvailable;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Transactional
     @PostMapping("/answer")
     public String handleAnswer(@RequestParam Long bookingId, @RequestParam Long questionId,
-            @RequestParam Long selectedAnswerId) {
-        Question question = questionService.getQuestionById(questionId)
-                .orElseThrow(() -> new RuntimeException("Question not found"));
-        Answer answer = answerService.getAnswerById(selectedAnswerId)
-                .orElseThrow(() -> new RuntimeException("Answer not found"));
-
-        // Create a UserAnswer or UserSelect
-        Detail detail;
-        if ("text".equals(question.getType())) {
-            detail = detailService.createDetail(DetailType.USER_ANSWER);
-            ((UserAnswer) detail).setText("Your answer text"); // Set UserAnswer specific fields
-        } else {
-            detail = detailService.createDetail(DetailType.USER_SELECT);
-            ((UserSelect) detail).setAnswer(answer);
-        }
-        detail.setBooking(bookingService.getBookingById(bookingId));
-        detail.setQuestion(question);
-        detailService.saveDetail(detail);
-
-        if (answer.getNextQuestion() != null) {
-            return "redirect:/booking/question/" + answer.getNextQuestion().getqId() + "?bookingId=" + bookingId;
-        } else {
+            @RequestParam Long selectedAnswerId, @RequestParam(required = false) Integer quantity,
+            RedirectAttributes redirectAttributes) {       
+        int requestedQuantity = (quantity != null) ? quantity : 1;
+        try {
+            boolean isValid = bookingValidationService.validateAndUpdateQuantity(bookingId, selectedAnswerId, requestedQuantity);
+            if (!isValid) {
+                throw new RuntimeException("This option is no longer available or the requested quantity exceeds the limit.");
+            }
+            
+            Answer answer = answerService.getAnswerById(selectedAnswerId)
+                    .orElseThrow(() -> new RuntimeException("Answer not found"));
+            
+            UserSelect userSelect = new UserSelect();
+            userSelect.setBooking(bookingService.getBookingById(bookingId));
+            userSelect.setQuestion(questionService.getQuestionById(questionId).orElseThrow(() -> new RuntimeException("Question not found")));
+            userSelect.setAnswer(answer);
+            userSelect.setQty(requestedQuantity);
+            detailService.saveDetail(userSelect);
+            
+            if (answer.getNextQuestion() != null) {
+                List<Answer> nextAnswers = answerService.getAnswersByQuestion(answer.getNextQuestion().getqId());
+                boolean hasAvailableNextAnswers = nextAnswers.stream()
+                    .anyMatch(nextAnswer -> bookingValidationService.isAvailableAnswer(bookingId, nextAnswer));
+                
+                if (hasAvailableNextAnswers) {
+                    return "redirect:/booking/question/" + answer.getNextQuestion().getqId() + "?bookingId=" + bookingId;
+                }
+            }
+            
             return "redirect:/booking/confirmation?bookingId=" + bookingId;
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/booking/question/" + questionId + "?bookingId=" + bookingId;
         }
     }
 

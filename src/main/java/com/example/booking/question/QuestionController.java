@@ -76,13 +76,16 @@ public class QuestionController {
             if ("choice".equals(question.getType())) {
                 if (choiceAnswer.getQty() == null || choiceAnswer.getQty() == 0) {
                     choiceAnswer.setQty(null);
+                    choiceAnswer.setRemainingQty(null);
+                } else {
+                    choiceAnswer.setRemainingQty(choiceAnswer.getQty());
                 }
-                answerService.saveAnswer(choiceAnswer);
+                answerService.createAnswer(choiceAnswer);
             } else {
                 // Handle other question types
                 Answer answer = new Answer();
                 answer.setQuestion(question);
-                answerService.saveAnswer(answer);
+                answerService.createAnswer(answer);
             }
 
             return "redirect:/questions/" + id;

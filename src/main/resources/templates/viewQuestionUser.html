@@ -6,14 +6,18 @@
 <body>
     <h1>Question</h1>
     <p th:text="${question.text}">Question text</p>
-    <form th:action="@{/booking/answer}" method="post">
-        <div th:each="answer : ${question.answers}">
+    <p th:if="${error}" th:text="${error}" style="color: red;"></p>
+    <form th:action="@{/booking/answer}" method="post" th:if="${not #lists.isEmpty(availableAnswers)}">
+        <div th:each="answer : ${availableAnswers}">
             <input type="radio" name="selectedAnswerId" th:value="${answer.aId}" required/>
             <label th:text="${answer.text}">Answer text</label>
+            <span th:if="${answer.qty != null}" th:text="'(Available: ' + ${answer.remainingQty != null ? answer.remainingQty : answer.qty} + ')'"></span>
+            <input th:if="${answer.qty != null}" type="number" name="quantity" min="1" th:max="${answer.remainingQty != null ? answer.remainingQty : answer.qty}" value="1"/>
         </div>
         <input type="hidden" name="bookingId" th:value="${bookingId}"/>
         <input type="hidden" name="questionId" th:value="${question.qId}"/>
         <button type="submit">Next</button>
     </form>
+    <p th:if="${#lists.isEmpty(availableAnswers)}">No available options for this question. Please contact support.</p>
 </body>
 </html>

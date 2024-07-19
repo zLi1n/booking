@@ -37,4 +37,8 @@ public class DetailService {
     public List<Detail> getDetailsByBooking(Booking booking) {
         return detailRepository.findByBooking(booking);
     }
+
+    public List<UserSelect> getUserSelectsByBookingAndAnswer(Long bookingId, Long answerId) {
+        return detailRepository.findUserSelectByBookingAndAnswer(bookingId, answerId);
+    }
 }

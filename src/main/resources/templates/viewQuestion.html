@@ -17,11 +17,10 @@
             <p th:text="${answer.text}">Answer text</p>
             <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
         </div>
-        <!-- Add handling for other answer types -->
 
         <a th:if="${answer.nextQuestion}" th:href="@{/questions/{id}(id=${answer.nextQuestion.qId})}">Next Question</a>
         <form
-            th:if="${answer.nextQuestion == null and (!(answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)) or answer.qty == null)}"
+            th:if="${answer.nextQuestion == null}"
             th:action="@{/questions/answers/{answerId}/nextquestion(answerId=${answer.aId})}" method="post">
             <input type="text" name="text" placeholder="Next Question Text" required />
             <select name="type">
