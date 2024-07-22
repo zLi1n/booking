@@ -7,14 +7,11 @@ import org.springframework.stereotype.Service;
 
 import com.example.booking.answer.Answer;
 import com.example.booking.answer.AnswerService;
-import com.example.booking.detail.DetailService;
 
 import jakarta.transaction.Transactional;
 
 @Service
 public class BookingValidationService {
-    @Autowired
-    private DetailService detailService;
     @Autowired
     private AnswerService answerService;
 

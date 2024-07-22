@@ -3,6 +3,8 @@
 
 <head>
     <title>Question Details</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 
 <body>
@@ -17,10 +19,12 @@
             <p th:text="${answer.text}">Answer text</p>
             <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
         </div>
-
+        <div th:if="${question.type == 'date' and answer instanceof T(com.example.booking.date_answer.DateAnswer)}">
+            <p th:text="${answer.date}">Date</p>
+            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
+        </div>
         <a th:if="${answer.nextQuestion}" th:href="@{/questions/{id}(id=${answer.nextQuestion.qId})}">Next Question</a>
-        <form
-            th:if="${answer.nextQuestion == null}"
+        <form th:if="${answer.nextQuestion == null}"
             th:action="@{/questions/answers/{answerId}/nextquestion(answerId=${answer.aId})}" method="post">
             <input type="text" name="text" placeholder="Next Question Text" required />
             <select name="type">
@@ -34,13 +38,23 @@
     </div>
 
     <h3>Add Answer</h3>
-    <form th:if="${question.type == 'choice'}" th:action="@{/questions/{id}/answers(id=${question.qId})}"
-        th:object="${newAnswer}" method="post">
-        <input type="text" th:field="*{text}" placeholder="Answer Text" required />
+    <form th:if="${question.type == 'choice' or question.type == 'date'}"
+        th:action="@{/questions/{id}/answers(id=${question.qId})}" th:object="${newAnswer}" method="post">
+        <input th:if="${question.type == 'choice'}" type="text" th:field="*{text}" placeholder="Answer Text" required />
+        <input th:if="${question.type == 'date'}" type="text" th:field="*{date}" id="datePicker" placeholder="Select Date" required />
         <input type="number" th:field="*{qty}" placeholder="Quantity (optional)" />
         <button type="submit">Add Answer</button>
     </form>
 
+    <script th:if="${question.type == 'date'}">
+        document.addEventListener('DOMContentLoaded', function () {
+            flatpickr("#datePicker", {
+                dateFormat: "Y-m-d",
+                minDate: "today"
+            });
+        });
+    </script>
+<br />
     <div th:if="${parentQuestion != null}">
         <a th:href="@{/questions/{id}(id=${parentQuestion.qId})}">Back to Previous Question</a>
     </div>

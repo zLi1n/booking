@@ -1,5 +1,6 @@
 package com.example.booking.date_answer;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import com.example.booking.answer.Answer;
@@ -21,5 +22,8 @@ public class DateAnswer extends Answer {
         this.date = date;
     }
 
-    
+    public String getFormattedDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(date);
+    }
 }

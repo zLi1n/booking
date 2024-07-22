@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.*;
 import com.example.booking.answer.Answer;
 import com.example.booking.answer.AnswerService;
 import com.example.booking.choice_answer.ChoiceAnswer;
+import com.example.booking.date_answer.DateAnswer;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Optional;
 
 @Controller
@@ -56,6 +59,8 @@ public class QuestionController {
             // Create the appropriate type of answer based on the question type
             if ("choice".equals(question.getType())) {
                 model.addAttribute("newAnswer", new ChoiceAnswer());
+            } else if ("date".equals(question.getType())) {
+                model.addAttribute("newAnswer", new DateAnswer());
             } else {
                 model.addAttribute("newAnswer", new Answer());
             }
@@ -67,13 +72,19 @@ public class QuestionController {
     }
 
     @PostMapping("/{id}/answers")
-    public String addAnswer(@PathVariable Long id, @ModelAttribute ChoiceAnswer choiceAnswer) {
+    public String addAnswer(@PathVariable Long id, @ModelAttribute Answer answer,
+            @RequestParam(required = false) String text,
+            @RequestParam(required = false) String date) throws ParseException {
         Optional<Question> questionOpt = questionService.getQuestionById(id);
         if (questionOpt.isPresent()) {
             Question question = questionOpt.get();
-            choiceAnswer.setQuestion(question);
+            answer.setQuestion(question);
 
             if ("choice".equals(question.getType())) {
+                ChoiceAnswer choiceAnswer = new ChoiceAnswer();
+                choiceAnswer.setText(text);
+                choiceAnswer.setQty(answer.getQty());
+                choiceAnswer.setQuestion(question);
                 if (choiceAnswer.getQty() == null || choiceAnswer.getQty() == 0) {
                     choiceAnswer.setQty(null);
                     choiceAnswer.setRemainingQty(null);
@@ -81,10 +92,22 @@ public class QuestionController {
                     choiceAnswer.setRemainingQty(choiceAnswer.getQty());
                 }
                 answerService.createAnswer(choiceAnswer);
+            } else if ("date".equals(question.getType())) {
+                DateAnswer dateAnswer = new DateAnswer();
+                if (date != null && !date.isEmpty()) {
+                    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                    dateAnswer.setDate(format.parse(date));
+                }
+                dateAnswer.setQty(answer.getQty());
+                dateAnswer.setQuestion(question);
+                if (dateAnswer.getQty() == null || dateAnswer.getQty() == 0) {
+                    dateAnswer.setQty(null);
+                    dateAnswer.setRemainingQty(null);
+                } else {
+                    dateAnswer.setRemainingQty(dateAnswer.getQty());
+                }
+                answerService.createAnswer(dateAnswer);
             } else {
-                // Handle other question types
-                Answer answer = new Answer();
-                answer.setQuestion(question);
                 answerService.createAnswer(answer);
             }
 

@@ -1,6 +1,8 @@
 package com.example.booking.booking;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -16,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.booking.answer.Answer;
 import com.example.booking.answer.AnswerService;
+import com.example.booking.date_answer.DateAnswer;
 import com.example.booking.detail.Detail;
 import com.example.booking.detail.DetailService;
 import com.example.booking.question.Question;
@@ -74,7 +77,17 @@ public class BookingController {
             List<Answer> availableAnswers = allAnswers.stream()
                 .filter(answer -> bookingValidationService.isAvailableAnswer(bookingId, answer))
                 .collect(Collectors.toList());
-            
+            List<Map<String, Object>> serializedAnswers = availableAnswers.stream()
+        .map(answer -> {
+            Map<String, Object> serializedAnswer = new HashMap<>();
+            serializedAnswer.put("aId", answer.getaId());
+            if (answer instanceof DateAnswer) {
+                DateAnswer dateAnswer = (DateAnswer) answer;
+                serializedAnswer.put("date", dateAnswer.getFormattedDate());
+            }
+            return serializedAnswer;
+        })
+        .collect(Collectors.toList());
             if (availableAnswers.isEmpty()) {
                 Answer nextAvailableAnswer = findNextAvailableAnswer(bookingId, question);
                 if (nextAvailableAnswer != null && nextAvailableAnswer.getNextQuestion() != null) {
@@ -86,6 +99,7 @@ public class BookingController {
             
             model.addAttribute("question", question);
             model.addAttribute("availableAnswers", availableAnswers);
+            model.addAttribute("serializedAnswers", serializedAnswers);
             model.addAttribute("bookingId", bookingId);
             return "viewQuestionUser";
         } else {
