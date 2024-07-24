@@ -1,5 +1,6 @@
 package com.example.booking.question;
 
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,13 @@ public class QuestionService {
 
     public Optional<Question> getParentQuestion(Long questionId) {
         return questionRepository.findById(questionId)
-            .map(Question::getParent);
+                .map(Question::getParent);
     }
+
+    public Question getQuestionWithAnswers(Long id) {
+        Question question = getQuestionById(id).orElseThrow(() -> new RuntimeException("Question not found"));
+        Hibernate.initialize(question.getAnswers());
+        return question;
+    }
+    
 }

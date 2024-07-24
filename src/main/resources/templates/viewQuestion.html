@@ -3,8 +3,10 @@
 
 <head>
     <title>Question Details</title>
+    <link rel="stylesheet" href="/viewQuestion.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 
 <body>
@@ -14,8 +16,7 @@
 
     <h2>Answers</h2>
     <div th:each="answer : ${question.answers}">
-        <div
-            th:if="${question.type == 'choice' and answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}">
+        <div th:if="${question.type == 'choice' and answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}">
             <p th:text="${answer.text}">Answer text</p>
             <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
         </div>
@@ -23,6 +24,15 @@
             <p th:text="${answer.date}">Date</p>
             <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
         </div>
+        <div th:if="${question.type == 'time' and answer instanceof T(com.example.booking.time_answer.TimeSlot)}">
+            <p th:text="'Start Time: ' + ${#temporals.format(answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">Start Time</p>
+            <p th:text="'End Time: ' + ${#temporals.format(answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">End Time</p>
+            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
+        </div>
+        <div th:if="${question.type == 'text'}">
+            <p>Text answer (User will provide input later)</p>
+        </div>
+        
         <a th:if="${answer.nextQuestion}" th:href="@{/questions/{id}(id=${answer.nextQuestion.qId})}">Next Question</a>
         <form th:if="${answer.nextQuestion == null}"
             th:action="@{/questions/answers/{answerId}/nextquestion(answerId=${answer.aId})}" method="post">
@@ -32,16 +42,45 @@
                 <option value="date">Date</option>
                 <option value="time">Time</option>
                 <option value="text">Text</option>
+                <option value="number">Number</option>
             </select>
             <button type="submit">Add Next Question</button>
         </form>
     </div>
 
-    <h3>Add Answer</h3>
-    <form th:if="${question.type == 'choice' or question.type == 'date'}"
+    <h3 th:if="${question.type != 'text'}">Add Answer</h3>
+    <form th:if="${question.type == 'choice' or question.type == 'date' or question.type == 'time' or question.type == 'number'}"
         th:action="@{/questions/{id}/answers(id=${question.qId})}" th:object="${newAnswer}" method="post">
+
         <input th:if="${question.type == 'choice'}" type="text" th:field="*{text}" placeholder="Answer Text" required />
-        <input th:if="${question.type == 'date'}" type="text" th:field="*{date}" id="datePicker" placeholder="Select Date" required />
+
+        <div th:if="${question.type == 'date'}">
+            <div class="flatpickr-wrapper">
+                <input type="text" id="datePicker" placeholder="Select Date..." data-input required>
+                <a class="input-button" title="toggle" data-toggle>
+                    <i class="fa fa-calendar"></i>
+                </a>
+
+                <a class="input-button" title="clear" data-clear>
+                    <i class="fa fa-close"></i>
+                </a>
+            </div>
+            <input type="hidden" name="selectedAnswerId" id="selectedAnswerId" />
+        </div>
+
+        <div th:if="${question.type == 'time'}">
+            <label for="startTimePicker">Start Time:</label>
+            <input type="time" id="startTimePicker" name="startTime" required />
+            <div id="startTimeError" class="error-message hidden">
+                <i class="fa fa-exclamation-circle"></i> Start time must be earlier than end time.
+            </div>
+            <label for="endTimePicker">End Time:</label>
+            <input type="time" id="endTimePicker" name="endTime" required />
+            <div id="endTimeError" class="error-message hidden">
+                <i class="fa fa-exclamation-circle"></i> End time must be later than start time.
+            </div>
+        </div>
+
         <input type="number" th:field="*{qty}" placeholder="Quantity (optional)" />
         <button type="submit">Add Answer</button>
     </form>
@@ -54,7 +93,42 @@
             });
         });
     </script>
-<br />
+    <script th:if="${question.type == 'time'}">
+        document.addEventListener('DOMContentLoaded', function () {
+            var startTimePickerElement = document.querySelector("#startTimePicker");
+            var endTimePickerElement = document.querySelector("#endTimePicker");
+            var startTimeErrorElement = document.querySelector("#startTimeError");
+            var endTimeErrorElement = document.querySelector("#endTimeError");
+
+            function validateTimes() {
+                var startTime = startTimePickerElement.value;
+                var endTime = endTimePickerElement.value;
+
+                if (startTime && endTime) {
+                    if (endTime <= startTime) {
+                        endTimePickerElement.classList.add('error');
+                        endTimeErrorElement.classList.remove('hidden');
+                        startTimePickerElement.classList.add('error');
+                        startTimeErrorElement.classList.remove('hidden');
+                    } else {
+                        endTimePickerElement.classList.remove('error');
+                        endTimeErrorElement.classList.add('hidden');
+                        startTimePickerElement.classList.remove('error');
+                        startTimeErrorElement.classList.add('hidden');
+                    }
+                } else {
+                    endTimePickerElement.classList.remove('error');
+                    endTimeErrorElement.classList.add('hidden');
+                    startTimePickerElement.classList.remove('error');
+                    startTimeErrorElement.classList.add('hidden');
+                }
+            }
+
+            endTimePickerElement.addEventListener('change', validateTimes);
+            startTimePickerElement.addEventListener('change', validateTimes);
+        });
+    </script>
+    <br />
     <div th:if="${parentQuestion != null}">
         <a th:href="@{/questions/{id}(id=${parentQuestion.qId})}">Back to Previous Question</a>
     </div>

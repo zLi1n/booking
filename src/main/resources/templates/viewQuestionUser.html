@@ -1,68 +1,86 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <title>Question</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
+
 <body>
     <h1>Question</h1>
     <p th:text="${question.text}">Question text</p>
     <p th:if="${error}" th:text="${error}" style="color: red;"></p>
-    <form th:action="@{/booking/answer}" method="post" th:if="${not #lists.isEmpty(availableAnswers)}">
-        <div th:if="${question.type == 'choice'}">
-            <div th:each="answer : ${availableAnswers}">
-                <input type="radio" name="selectedAnswerId" th:value="${answer.aId}" required/>
-                <label th:text="${answer.text}">Answer text</label>
-                <span th:if="${answer.qty != null}" th:text="'(Available: ' + ${answer.remainingQty != null ? answer.remainingQty : answer.qty} + ')'"></span>
-                <input th:if="${answer.qty != null}" type="number" name="quantity" min="1" th:max="${answer.remainingQty != null ? answer.remainingQty : answer.qty}" value="1"/>
+    <div th:if="${isTextQuestion}">
+        <form th:action="@{/booking/answer}" method="post">
+            <textarea name="textAnswer" rows="4" cols="50" required></textarea>
+            <input type="hidden" name="bookingId" th:value="${bookingId}" />
+            <input type="hidden" name="questionId" th:value="${question.qId}" />
+            <button type="submit">Next</button>
+        </form>
+    </div>
+    <div th:if="${!isTextQuestion and not #lists.isEmpty(availableAnswers)}">
+        <form th:action="@{/booking/answer}" method="post" th:if="${not #lists.isEmpty(availableAnswers)}">
+            <div th:if="${question.type == 'choice'}">
+                <div th:each="answer : ${availableAnswers}">
+                    <input type="radio" name="selectedAnswerId" th:value="${answer.aId}" required />
+                    <label th:text="${answer.text}">Answer text</label>
+                    <span th:if="${answer.qty != null}"
+                        th:text="'(Available: ' + ${answer.remainingQty != null ? answer.remainingQty : answer.qty} + ')'"></span>
+                    <input th:if="${answer.qty != null}" type="number" name="quantity" min="1"
+                        th:max="${answer.remainingQty != null ? answer.remainingQty : answer.qty}" value="1" />
+                </div>
             </div>
-        </div>
-        <div th:if="${question.type == 'date'}">
-            <div class="flatpickr-wrapper">
-                <input type="text" id="datePicker" placeholder="Select Date..." data-input required>
-           
-                <!-- External buttons -->
-                <a class="input-button" title="toggle" data-toggle>
-                 <i class="fa fa-calendar"></i>
-             </a>
-           
-             <a class="input-button" title="clear" data-clear>
-                 <i class="fa fa-close"></i>
-                </a>
-              </div>
-            <input type="hidden" name="quantity" value="1"/>
-            <input type="hidden" name="selectedAnswerId" id="selectedAnswerId"/>
-        </div>
-        <input type="hidden" name="bookingId" th:value="${bookingId}"/>
-        <input type="hidden" name="questionId" th:value="${question.qId}"/>
-        <button type="submit">Next</button>
-    </form>
-    
-    <p th:if="${#lists.isEmpty(availableAnswers)}">No available options for this question.</p>
+            <div th:if="${question.type == 'date'}">
+                <div class="flatpickr-wrapper">
+                    <input type="text" id="datePicker" placeholder="Select Date..." data-input required>
+                    <a class="input-button" title="toggle" data-toggle>
+                        <i class="fa fa-calendar"></i>
+                    </a>
 
+                    <a class="input-button" title="clear" data-clear>
+                        <i class="fa fa-close"></i>
+                    </a>
+                </div>
+                <input type="hidden" name="quantity" value="1" />
+                <input type="hidden" name="selectedAnswerId" id="selectedAnswerId" />
+            </div>
+            <div th:if="${question.type == 'time'}">
+                <select id="timeSlotSelect" name="selectedAnswerId" required>
+                    <option value="">Select a time slot...</option>
+                </select>
+            </div>
+
+            <input type="hidden" name="bookingId" th:value="${bookingId}" />
+            <input type="hidden" name="questionId" th:value="${question.qId}" />
+            <button type="submit">Next</button>
+        </form>
+
+        <div th:if="${!isTextQuestion and #lists.isEmpty(availableAnswers)}">No available options for this question.</p>
+    </div>
     <script th:inline="javascript">
         /*<![CDATA[*/
-        var availableAnswers = /*[[${serializedAnswers}]]*/ [];
-        console.log('Available Answers:', availableAnswers);
+        var availableAnswers = /*[[${serializedAnswers}]]*/[];
         /*]]>*/
-    
+
         document.addEventListener('DOMContentLoaded', function () {
             var datePicker = document.getElementById('datePicker');
+            var timeSlotSelect = document.getElementById('timeSlotSelect');
+
             if (datePicker) {
-                var enabledDates = availableAnswers.map(function(answer) {
+                var enabledDates = availableAnswers.map(function (answer) {
                     return answer.date;
                 });
-    
+
                 console.log('Enabled Dates:', enabledDates);
-    
+
                 var fp = flatpickr(datePicker, {
                     dateFormat: "Y-m-d",
                     minDate: "today",
                     enable: enabledDates,
-                    onChange: function(selectedDates, dateStr, instance) {
-                        var selectedAnswer = availableAnswers.find(function(answer) {
+                    onChange: function (selectedDates, dateStr, instance) {
+                        var selectedAnswer = availableAnswers.find(function (answer) {
                             return answer.date === dateStr;
                         });
                         if (selectedAnswer) {
@@ -70,17 +88,37 @@
                         }
                     }
                 });
+
+                document.querySelector("[data-toggle]").addEventListener("click", function () {
+                    fp.toggle();
+                });
+
+                // Clear date input
+                document.querySelector("[data-clear]").addEventListener("click", function () {
+                    fp.clear();
+                });
             }
 
-        document.querySelector("[data-toggle]").addEventListener("click", function() {
-         fp.toggle();
-       });
+            if (timeSlotSelect) {
+                // Sort time slots
+                var timeSlots = availableAnswers.filter(answer => answer.timeRange);
+                timeSlots.sort((a, b) => a.timeRange.localeCompare(b.timeRange));
 
-       // Clear date input
-       document.querySelector("[data-clear]").addEventListener("click", function() {
-         fp.clear();
-       });
-     });
+                // Populate dropdown
+                timeSlots.forEach(function (answer) {
+                    var option = document.createElement('option');
+                    option.value = answer.aId;
+                    option.textContent = answer.timeRange;
+                    timeSlotSelect.appendChild(option);
+                });
+
+                // Handle time slot selection
+                timeSlotSelect.addEventListener('change', function () {
+                    document.getElementById('selectedAnswerId').value = this.value;
+                });
+            }
+        });
     </script>
 </body>
+
 </html>

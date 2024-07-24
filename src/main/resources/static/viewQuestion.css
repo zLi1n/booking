@@ -1,0 +1,28 @@
+.input-button {
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 5px;
+  }
+  .input-button i {
+    font-size: 16px;
+  }
+
+  .error {
+    border-color: red;
+  }
+
+  .error-message {
+    color: red;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+
+  .error-message i {
+    margin-right: 5px;
+  }
+
+  .hidden {
+    display: none;
+  }

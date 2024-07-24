@@ -9,6 +9,8 @@ import com.example.booking.answer.Answer;
 import com.example.booking.answer.AnswerService;
 import com.example.booking.choice_answer.ChoiceAnswer;
 import com.example.booking.date_answer.DateAnswer;
+import com.example.booking.number_answer.NumberAnswer;
+import com.example.booking.time_answer.TimeSlot;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -43,7 +45,13 @@ public class QuestionController {
         if (question.getParent() == null) {
             question.setLevel(1);
         }
-        questionService.saveQuestion(question);
+        Question savedQuestion = questionService.saveQuestion(question);
+        if ("text".equals(savedQuestion.getType())) {
+            Answer textAnswer = new Answer();
+            textAnswer.setQuestion(savedQuestion);
+            textAnswer.setQty(null);
+            answerService.createAnswer(textAnswer);
+        }
         return "redirect:/questions";
     }
 
@@ -51,16 +59,27 @@ public class QuestionController {
     public String viewQuestion(@PathVariable Long id, Model model) {
         Optional<Question> questionOpt = questionService.getQuestionById(id);
         if (questionOpt.isPresent()) {
-            Question question = questionOpt.get();
+            Question question = questionService.getQuestionWithAnswers(id);
             model.addAttribute("question", question);
             Optional<Question> parentQuestionOpt = questionService.getParentQuestion(id);
             parentQuestionOpt.ifPresent(parent -> model.addAttribute("parentQuestion", parent));
 
-            // Create the appropriate type of answer based on the question type
+            if ("text".equals(question.getType()) && question.getAnswers().isEmpty()) {
+                Answer textAnswer = new Answer();
+                textAnswer.setQuestion(question);
+                textAnswer.setQty(null);
+                answerService.createAnswer(textAnswer);
+                return "redirect:/questions/" + id;
+            }
+
             if ("choice".equals(question.getType())) {
                 model.addAttribute("newAnswer", new ChoiceAnswer());
             } else if ("date".equals(question.getType())) {
                 model.addAttribute("newAnswer", new DateAnswer());
+            } else if ("time".equals(question.getType())) {
+                model.addAttribute("newAnswer", new TimeSlot());
+            } else if ("number".equals(question.getType())) {
+                model.addAttribute("newAnswer", new NumberAnswer());
             } else {
                 model.addAttribute("newAnswer", new Answer());
             }
@@ -74,7 +93,11 @@ public class QuestionController {
     @PostMapping("/{id}/answers")
     public String addAnswer(@PathVariable Long id, @ModelAttribute Answer answer,
             @RequestParam(required = false) String text,
-            @RequestParam(required = false) String date) throws ParseException {
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            @RequestParam(required = false) Integer maxNum,
+            @RequestParam(required = false) Integer minNum) throws ParseException {
         Optional<Question> questionOpt = questionService.getQuestionById(id);
         if (questionOpt.isPresent()) {
             Question question = questionOpt.get();
@@ -107,6 +130,43 @@ public class QuestionController {
                     dateAnswer.setRemainingQty(dateAnswer.getQty());
                 }
                 answerService.createAnswer(dateAnswer);
+            } else if ("time".equals(question.getType())) {
+                TimeSlot timeSlot = new TimeSlot();
+                timeSlot.setQuestion(question);
+                timeSlot.setQty(answer.getQty());
+
+                if (startTime != null && !startTime.isEmpty() && endTime != null && !endTime.isEmpty()) {
+                    SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                    try {
+                        timeSlot.setStartTime(timeFormat.parse(startTime));
+                        timeSlot.setEndTime(timeFormat.parse(endTime));
+                    } catch (ParseException e) {
+                        return "redirect:/questions/" + id + "?error=invalid_time_format";
+                    }
+                }
+
+                if (timeSlot.getQty() == null || timeSlot.getQty() == 0) {
+                    timeSlot.setQty(null);
+                    timeSlot.setRemainingQty(null);
+                } else {
+                    timeSlot.setRemainingQty(timeSlot.getQty());
+                }
+
+                answerService.createAnswer(timeSlot);
+            } else if ("number".equals(question.getType())) {
+                NumberAnswer numberAnswer = new NumberAnswer();
+                numberAnswer.setQuestion(question);
+                numberAnswer.setMaxNum(maxNum);
+                numberAnswer.setMinNum(minNum);
+                numberAnswer.setQty(answer.getQty());
+                numberAnswer.setQuestion(question);
+                if (numberAnswer.getQty() == null || numberAnswer.getQty() == 0) {
+                    numberAnswer.setQty(null);
+                    numberAnswer.setRemainingQty(null);
+                } else {
+                    numberAnswer.setRemainingQty(numberAnswer.getQty());
+                }
+                answerService.createAnswer(numberAnswer);
             } else {
                 answerService.createAnswer(answer);
             }
