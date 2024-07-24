@@ -20,13 +20,18 @@
             <p th:text="'Question text: ' + ${detail.question?.text}">Question</p>
             <p th:if="${detail instanceof T(com.example.booking.user_answer.UserAnswer)}"
                 th:text="'Answer text: ' + ${detail.text}">Answer</p>
-                <p th:if="${detail instanceof T(com.example.booking.user_select.UserSelect)}">
-                    <span th:if="${detail.answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}"
-                          th:text="'Answer text: ' + ${detail.answer.text}">Answer</span>
-                    <span th:if="${detail.answer instanceof T(com.example.booking.date_answer.DateAnswer)}"
-                          th:text="'Date: ' + ${#dates.format(detail.answer.date, 'yyyy-MM-dd')}">Date</span>
-                    <!--<span th:text="'Quantity: ' + ${detail.qty}">Quantity</span>-->
-                </p>
+            <p th:if="${detail instanceof T(com.example.booking.user_select.UserSelect)}">
+                <span th:if="${detail.answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}"
+                    th:text="'Answer text: ' + ${detail.answer.text}">Answer</span>
+                <span th:if="${detail.answer instanceof T(com.example.booking.date_answer.DateAnswer)}"
+                    th:text="'Date: ' + ${#dates.format(detail.answer.date, 'yyyy-MM-dd')}">Date</span>
+                <span th:if="${detail.answer instanceof T(com.example.booking.time_answer.TimeSlot)}"
+                    th:text="'Time: ' + ${#temporals.format(detail.answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)} + ' - ' + ${#temporals.format(detail.answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">Time
+                    Slot</span>
+                <span th:if="${detail.answer instanceof T(com.example.booking.number_answer.NumberAnswer)}"
+                    th:text="'Quantity: ' + ${detail.qty}">Quantity</span>
+                <!--<span th:text="'Quantity: ' + ${detail.qty}">Quantity</span>-->
+            </p>
         </div>
     </div>
     <a th:href="@{/booking/book(userId=${user.uId})}">Start New Booking</a>

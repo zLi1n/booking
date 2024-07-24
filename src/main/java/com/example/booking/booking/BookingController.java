@@ -21,6 +21,7 @@ import com.example.booking.answer.AnswerService;
 import com.example.booking.date_answer.DateAnswer;
 import com.example.booking.detail.Detail;
 import com.example.booking.detail.DetailService;
+import com.example.booking.number_answer.NumberAnswer;
 import com.example.booking.question.Question;
 import com.example.booking.question.QuestionService;
 import com.example.booking.time_answer.TimeSlot;
@@ -80,7 +81,7 @@ public class BookingController {
             if ("text".equals(question.getType())) {
                 model.addAttribute("isTextQuestion", true);
                 model.addAttribute("userAnswer", new UserAnswer());
-            } else {
+            }else {
                 List<Answer> allAnswers = answerService.getAnswersByQuestion(id);
                 List<Answer> availableAnswers = allAnswers.stream()
                         .filter(answer -> bookingValidationService.isAvailableAnswer(bookingId, answer))
@@ -96,6 +97,10 @@ public class BookingController {
                             } else if (answer instanceof TimeSlot) {
                                 TimeSlot timeSlot = (TimeSlot) answer;
                                 serializedAnswer.put("timeRange", timeSlot.getFormattedTimeRange());
+                            }  else if (answer instanceof NumberAnswer) {
+                                NumberAnswer numberAnswer = (NumberAnswer) answer;
+                                serializedAnswer.put("maxNum", numberAnswer.getMaxNum());
+                                serializedAnswer.put("minNum", numberAnswer.getMinNum());
                             }
                             return serializedAnswer;
                         })
@@ -156,7 +161,6 @@ public class BookingController {
 
                 System.out.println("Saved UserAnswer: " + userAnswer.getdId() + ", Text: " + userAnswer.getText());
 
-                // Check for next question after saving text answer
                 List<Question> childQuestions = questionService.getChildQuestions(questionId);
                 if (!childQuestions.isEmpty()) {
                     return "redirect:/booking/question/" + childQuestions.get(0).getqId() + "?bookingId=" + bookingId;

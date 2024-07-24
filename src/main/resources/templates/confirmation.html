@@ -28,6 +28,8 @@
                 <span th:if="${detail.answer instanceof T(com.example.booking.time_answer.TimeSlot)}"
                     th:text="'Time: ' + ${#temporals.format(detail.answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)} + ' - ' + ${#temporals.format(detail.answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">Time
                     Slot</span>
+                <span th:if="${detail.answer instanceof T(com.example.booking.number_answer.NumberAnswer)}"
+                    th:text="'Quantity: ' + ${detail.qty}">Quantity</span>
                 <!--<span th:text="'Quantity: ' + ${detail.qty}">Quantity</span>-->
             </p>
         </div>

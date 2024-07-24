@@ -34,7 +34,7 @@
             </div>
             <div th:if="${question.type == 'date'}">
                 <div class="flatpickr-wrapper">
-                    <input type="text" id="datePicker" placeholder="Select Date..." data-input required>
+                    <input type="text" id="datePicker" placeholder="Select Date..." data-input required />
                     <a class="input-button" title="toggle" data-toggle>
                         <i class="fa fa-calendar"></i>
                     </a>
@@ -51,74 +51,84 @@
                     <option value="">Select a time slot...</option>
                 </select>
             </div>
-
+            <div th:if="${question.type == 'number'}">
+                <input type="number" id="numberInput" name="quantity" required />
+                <input type="hidden" name="selectedAnswerId" id="numberSelectedAnswerId" />
+            </div>
             <input type="hidden" name="bookingId" th:value="${bookingId}" />
             <input type="hidden" name="questionId" th:value="${question.qId}" />
             <button type="submit">Next</button>
         </form>
 
         <div th:if="${!isTextQuestion and #lists.isEmpty(availableAnswers)}">No available options for this question.</p>
-    </div>
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        var availableAnswers = /*[[${serializedAnswers}]]*/[];
-        /*]]>*/
+        </div>
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            var availableAnswers = /*[[${serializedAnswers}]]*/[];
+            /*]]>*/
 
-        document.addEventListener('DOMContentLoaded', function () {
-            var datePicker = document.getElementById('datePicker');
-            var timeSlotSelect = document.getElementById('timeSlotSelect');
+            document.addEventListener('DOMContentLoaded', function () {
+                var datePicker = document.getElementById('datePicker');
+                var timeSlotSelect = document.getElementById('timeSlotSelect');
+                var numberInput = document.getElementById('numberInput');
+                var numberSelectedAnswerId = document.getElementById('numberSelectedAnswerId');
 
-            if (datePicker) {
-                var enabledDates = availableAnswers.map(function (answer) {
-                    return answer.date;
-                });
+                if (datePicker) {
+                    var enabledDates = availableAnswers.map(function (answer) {
+                        return answer.date;
+                    });
 
-                console.log('Enabled Dates:', enabledDates);
+                    console.log('Enabled Dates:', enabledDates);
 
-                var fp = flatpickr(datePicker, {
-                    dateFormat: "Y-m-d",
-                    minDate: "today",
-                    enable: enabledDates,
-                    onChange: function (selectedDates, dateStr, instance) {
-                        var selectedAnswer = availableAnswers.find(function (answer) {
-                            return answer.date === dateStr;
-                        });
-                        if (selectedAnswer) {
-                            document.getElementById('selectedAnswerId').value = selectedAnswer.aId;
+                    var fp = flatpickr(datePicker, {
+                        dateFormat: "Y-m-d",
+                        minDate: "today",
+                        enable: enabledDates,
+                        onChange: function (selectedDates, dateStr, instance) {
+                            var selectedAnswer = availableAnswers.find(function (answer) {
+                                return answer.date === dateStr;
+                            });
+                            if (selectedAnswer) {
+                                document.getElementById('selectedAnswerId').value = selectedAnswer.aId;
+                            }
                         }
+                    });
+
+                    document.querySelector("[data-toggle]").addEventListener("click", function () {
+                        fp.toggle();
+                    });
+
+                    document.querySelector("[data-clear]").addEventListener("click", function () {
+                        fp.clear();
+                    });
+                }
+
+                if (timeSlotSelect) {
+                    var timeSlots = availableAnswers.filter(answer => answer.timeRange);
+                    timeSlots.sort((a, b) => a.timeRange.localeCompare(b.timeRange));
+
+                    timeSlots.forEach(function (answer) {
+                        var option = document.createElement('option');
+                        option.value = answer.aId;
+                        option.textContent = answer.timeRange;
+                        timeSlotSelect.appendChild(option);
+                    });
+
+                    timeSlotSelect.addEventListener('change', function () {
+                        document.getElementById('selectedAnswerId').value = this.value;
+                    });
+                }
+
+                if (numberInput && numberSelectedAnswerId) {
+                    var numberAnswer = availableAnswers.find(answer => answer.minNum !== undefined && answer.maxNum !== undefined);
+                    if (numberAnswer) {
+                        numberInput.min = numberAnswer.minNum;
+                        numberInput.max = numberAnswer.maxNum;
+                        numberSelectedAnswerId.value = numberAnswer.aId;
                     }
-                });
-
-                document.querySelector("[data-toggle]").addEventListener("click", function () {
-                    fp.toggle();
-                });
-
-                // Clear date input
-                document.querySelector("[data-clear]").addEventListener("click", function () {
-                    fp.clear();
-                });
-            }
-
-            if (timeSlotSelect) {
-                // Sort time slots
-                var timeSlots = availableAnswers.filter(answer => answer.timeRange);
-                timeSlots.sort((a, b) => a.timeRange.localeCompare(b.timeRange));
-
-                // Populate dropdown
-                timeSlots.forEach(function (answer) {
-                    var option = document.createElement('option');
-                    option.value = answer.aId;
-                    option.textContent = answer.timeRange;
-                    timeSlotSelect.appendChild(option);
-                });
-
-                // Handle time slot selection
-                timeSlotSelect.addEventListener('change', function () {
-                    document.getElementById('selectedAnswerId').value = this.value;
-                });
-            }
-        });
-    </script>
+                }
+            });
+        </script>
 </body>
 
 </html>

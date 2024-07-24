@@ -16,7 +16,8 @@
 
     <h2>Answers</h2>
     <div th:each="answer : ${question.answers}">
-        <div th:if="${question.type == 'choice' and answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}">
+        <div
+            th:if="${question.type == 'choice' and answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}">
             <p th:text="${answer.text}">Answer text</p>
             <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
         </div>
@@ -25,14 +26,25 @@
             <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
         </div>
         <div th:if="${question.type == 'time' and answer instanceof T(com.example.booking.time_answer.TimeSlot)}">
-            <p th:text="'Start Time: ' + ${#temporals.format(answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">Start Time</p>
-            <p th:text="'End Time: ' + ${#temporals.format(answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">End Time</p>
+            <p
+                th:text="'Start Time: ' + ${#temporals.format(answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">
+                Start Time</p>
+            <p th:text="'End Time: ' + ${#temporals.format(answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">
+                End Time</p>
+            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
+        </div>
+        <div
+            th:if="${question.type == 'number' and answer instanceof T(com.example.booking.number_answer.NumberAnswer)}">
+            <p th:text="${answer.minNum != null ? 'Minimum Number Input: ' + answer.minNum : 'No minimun number'}">
+                Minimum Number</p>
+            <p th:text="${answer.maxNum != null ? 'Maximum Number Input: ' + answer.maxNum : 'No maximum number'}">
+                Maximum Number</p>
             <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
         </div>
         <div th:if="${question.type == 'text'}">
             <p>Text answer (User will provide input later)</p>
         </div>
-        
+
         <a th:if="${answer.nextQuestion}" th:href="@{/questions/{id}(id=${answer.nextQuestion.qId})}">Next Question</a>
         <form th:if="${answer.nextQuestion == null}"
             th:action="@{/questions/answers/{answerId}/nextquestion(answerId=${answer.aId})}" method="post">
@@ -48,24 +60,23 @@
         </form>
     </div>
 
-    <h3 th:if="${question.type != 'text'}">Add Answer</h3>
-    <form th:if="${question.type == 'choice' or question.type == 'date' or question.type == 'time' or question.type == 'number'}"
+    <h3 th:if="${question.type != 'text' and (question.type != 'number' or question.answers.isEmpty())}">Add Answer</h3>
+    <form
+        th:if="${question.type == 'choice' or question.type == 'date' or question.type == 'time' or (question.type == 'number' and question.answers.isEmpty())}"
         th:action="@{/questions/{id}/answers(id=${question.qId})}" th:object="${newAnswer}" method="post">
 
         <input th:if="${question.type == 'choice'}" type="text" th:field="*{text}" placeholder="Answer Text" required />
 
         <div th:if="${question.type == 'date'}">
             <div class="flatpickr-wrapper">
-                <input type="text" id="datePicker" placeholder="Select Date..." data-input required>
+                <input type="text" id="datePicker" name="date" placeholder="Select Date..." data-input required>
                 <a class="input-button" title="toggle" data-toggle>
                     <i class="fa fa-calendar"></i>
                 </a>
-
                 <a class="input-button" title="clear" data-clear>
                     <i class="fa fa-close"></i>
                 </a>
             </div>
-            <input type="hidden" name="selectedAnswerId" id="selectedAnswerId" />
         </div>
 
         <div th:if="${question.type == 'time'}">
@@ -81,15 +92,39 @@
             </div>
         </div>
 
+        <div th:if="${question.type == 'number' and !question.answers.isEmpty()}">
+            <h3>Current Number Answer</h3>
+            <div th:with="answer=${question.answers[0]}">
+                <p th:text="${answer.minNum != null ? 'Minimum Number Input: ' + answer.minNum : 'No minimum number'}">
+                    Minimum Number</p>
+                <p th:text="${answer.maxNum != null ? 'Maximum Number Input: ' + answer.maxNum : 'No maximum number'}">
+                    Maximum Number</p>
+                <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
+                
+                <!-- Optional: Add an edit button or form here -->
+            </div>
+        </div>
+
         <input type="number" th:field="*{qty}" placeholder="Quantity (optional)" />
         <button type="submit">Add Answer</button>
     </form>
 
     <script th:if="${question.type == 'date'}">
         document.addEventListener('DOMContentLoaded', function () {
-            flatpickr("#datePicker", {
+            const fpDate = flatpickr("#datePicker", {
                 dateFormat: "Y-m-d",
-                minDate: "today"
+                minDate: "today",
+                onChange: function (selectedDates, dateStr, instance) {
+                    document.getElementById('datePicker').value = dateStr;
+                }
+            });
+
+            document.querySelector("[data-toggle]").addEventListener("click", function () {
+                fpDate.toggle();
+            });
+
+            document.querySelector("[data-clear]").addEventListener("click", function () {
+                fpDate.clear();
             });
         });
     </script>
