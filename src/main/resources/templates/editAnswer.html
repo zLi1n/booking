@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Edit Answer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container mt-4 mb-3">
+        <h1>Edit Answer</h1>
+        <form th:action="@{/questions/answers/{answerId}/edit(answerId=${answer.aId})}" th:object="${answer}"
+            method="post" class="row g-0">
+            <div class="row mb-3" th:if="${questionType == 'choice'}">
+                <label class="col-sm-2 col-form-label" for="text">Answer Text:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="text" name="text" class="form-control"
+                        th:value="${answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer) ? answer.text : ''}" />
+                </div>
+            </div>
+            <div class="row mb-3" th:if="${questionType == 'date'}">
+                <label class="col-sm-2 col-form-label" for="datePicker">Date:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="datePicker" name="date" class="form-control"
+                        th:value="${answer instanceof T(com.example.booking.date_answer.DateAnswer) ? #dates.format(answer.date, 'yyyy-MM-dd') : ''}" />
+                </div>
+            </div>
+            <div class="row mb-3" th:if="${questionType == 'time'}">
+                <label class="col-sm-2 col-form-label" for="startTimePicker">Start Time:</label>
+                <div class="col-sm-4">
+                    <input type="time" id="startTimePicker" name="startTime" class="form-control"
+                        th:value="${answer instanceof T(com.example.booking.time_answer.TimeSlot) ? #temporals.format(answer.startTime, 'HH:mm') : ''}" />
+                </div>
+                <label class="col-sm-2 col-form-label" for="endTimePicker">End Time:</label>
+                <div class="col-sm-4">
+                    <input type="time" id="endTimePicker" name="endTime" class="form-control"
+                        th:value="${answer instanceof T(com.example.booking.time_answer.TimeSlot) ? #temporals.format(answer.endTime, 'HH:mm') : ''}" />
+                </div>
+            </div>
+            <div class="row mb-3" th:if="${questionType == 'number'}">
+                <label class="col-sm-2 col-form-label" for="minNum">Minimum Number:</label>
+                <div class="col-sm-4">
+                    <input type="number" id="minNum" name="minNum" class="form-control"
+                        th:value="${answer instanceof T(com.example.booking.number_answer.NumberAnswer) ? answer.minNum : ''}" />
+                </div>
+                <label class="col-sm-2 col-form-label" for="maxNum">Maximum Number:</label>
+                <div class="col-sm-4">
+                    <input type="number" id="maxNum" name="maxNum" class="form-control"
+                        th:value="${answer instanceof T(com.example.booking.number_answer.NumberAnswer) ? answer.maxNum : ''}" />
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-sm-2 col-form-label" for="qty">Quantity:</label>
+                <div class="col-sm-10">
+                    <input type="number" id="qty" th:field="*{qty}" class="form-control"
+                        placeholder="Quantity (optional)" />
+                </div>
+            </div>
+            <div class="d-grid gap-1 col-2 mx-auto">
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-success"><i class="fa fa-check-circle"></i> Save</button>
+                    <a th:href="@{/questions/{id}(id=${answer.question.qId})}" class="btn btn-secondary">Cancel <i
+                            class="fa fa-times-circle"></i></a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script th:if="${questionType == 'date'}">
+        flatpickr("#datePicker", {
+            dateFormat: "Y-m-d",
+            minDate: "today"
+        });
+    </script>
+</body>
+
+</html>

@@ -3,39 +3,73 @@
 
 <head>
     <title>Booking History</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
 
 <body>
-    <h1>Booking History</h1>
-    <p th:text="'User: ' + ${user.name}">User Name</p>
-    <p th:text="'Email: ' + ${user.email}">User Email</p>
-    <p th:text="'Telephone: ' + ${user.tel}">User Telephone</p>
-    <h2>Booking History:</h2>
-    <div th:each="booking : ${bookings}">
-        <h4 th:text="'Booking ID: ' + ${booking.bId}">Booking ID</h4>
-        <p th:text="'Date: ' + ${booking.date}">Booking Date</p>
-        <p th:text="'Status: ' + ${booking.status}">Booking Status</p>
-        <h5>Details:</h5>
-        <div th:each="detail : ${booking.details}">
-            <p th:text="'Question text: ' + ${detail.question?.text}">Question</p>
-            <p th:if="${detail instanceof T(com.example.booking.user_answer.UserAnswer)}"
-                th:text="'Answer text: ' + ${detail.text}">Answer</p>
-            <p th:if="${detail instanceof T(com.example.booking.user_select.UserSelect)}">
-                <span th:if="${detail.answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}"
-                    th:text="'Answer text: ' + ${detail.answer.text}">Answer</span>
-                <span th:if="${detail.answer instanceof T(com.example.booking.date_answer.DateAnswer)}"
-                    th:text="'Date: ' + ${#dates.format(detail.answer.date, 'yyyy-MM-dd')}">Date</span>
-                <span th:if="${detail.answer instanceof T(com.example.booking.time_answer.TimeSlot)}"
-                    th:text="'Time: ' + ${#temporals.format(detail.answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)} + ' - ' + ${#temporals.format(detail.answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">Time
-                    Slot</span>
-                <span th:if="${detail.answer instanceof T(com.example.booking.number_answer.NumberAnswer)}"
-                    th:text="'Quantity: ' + ${detail.qty}">Quantity</span>
-                <!--<span th:text="'Quantity: ' + ${detail.qty}">Quantity</span>-->
-            </p>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+        <div class="container">
+            <div class="d-flex justify-content-between w-100">
+                    <a th:href="@{/booking/book(userId=${user.uId})}" class="btn btn-primary">Start New Booking</a>
+                    <a th:href="@{/booking/main(userId=${user.uId})}" class="btn btn-secondary">Home</a>
+                
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4 mb-3">
+        <h1>Booking History</h1>
+        <p th:text="'User: ' + ${user.name}">User Name</p>
+        <p th:text="'Email: ' + ${user.email}">User Email</p>
+        <p th:text="'Telephone: ' + ${user.tel}">User Telephone</p>
+        <div th:each="booking : ${bookings}" class="mb-3 p-3 bg-info bg-opacity-10 border border-info rounded-end">
+            <h4 th:text="'Booking ID: ' + ${booking.bId}">Booking ID</h4>
+            <p th:text="'Date: ' + ${booking.date}">Booking Date</p>
+            <p th:text="'Status: ' + ${booking.status}">Booking Status</p>
+            <h5>Details:</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Question</th>
+                        <th scope="col">Answer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="detail, detailStat : ${booking.details}">
+                        <th scope="row" th:text="${detailStat.count}"></th>
+                        <td th:text="${detail.question?.text}">Question</td>
+                        <td>
+                            <span th:if="${detail instanceof T(com.example.booking.user_answer.UserAnswer)}"
+                                th:text="${detail.text}">Answer</span>
+
+                            <span th:if="${detail instanceof T(com.example.booking.user_select.UserSelect)}">
+                                <span
+                                    th:if="${detail.answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}"
+                                    th:text="${detail.answer.text}">Answer</span>
+
+                                <span th:if="${detail.answer instanceof T(com.example.booking.date_answer.DateAnswer)}"
+                                    th:text="${#dates.format(detail.answer.date, 'yyyy-MM-dd')}">Date</span>
+
+                                <span th:if="${detail.answer instanceof T(com.example.booking.time_answer.TimeSlot)}"
+                                    th:text="'Time: ' + ${#temporals.format(detail.answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)} + ' - ' + ${#temporals.format(detail.answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">Time
+                                    Slot</span>
+
+                                <span
+                                    th:if="${detail.answer instanceof T(com.example.booking.number_answer.NumberAnswer)}"
+                                    th:text="'Quantity: ' + ${detail.qty}">Quantity</span>
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="d-grid col-3 mx-auto">
+            <div class="btn-group">
+                <a th:href="@{/booking/book(userId=${user.uId})}" class="btn btn-primary">Start New Booking</a>
+                <a th:href="@{/booking/main(userId=${user.uId})}" class="btn btn-secondary">Home</a>
+            </div>
         </div>
     </div>
-    <a th:href="@{/booking/book(userId=${user.uId})}">Start New Booking</a>
-    <a th:href="@{/booking/main(userId=${user.uId})}">Home</a>
 </body>
 
 </html>

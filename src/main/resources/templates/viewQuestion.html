@@ -7,168 +7,242 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
 
 <body>
-    <h1>Question</h1>
-    <p th:text="${question.text}">Question text</p>
-    <p th:text="'Type: ' + ${question.type}">Question type</p>
-
-    <h2>Answers</h2>
-    <div th:each="answer : ${question.answers}">
-        <div
-            th:if="${question.type == 'choice' and answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}">
-            <p th:text="${answer.text}">Answer text</p>
-            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
-        </div>
-        <div th:if="${question.type == 'date' and answer instanceof T(com.example.booking.date_answer.DateAnswer)}">
-            <p th:text="${answer.date}">Date</p>
-            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
-        </div>
-        <div th:if="${question.type == 'time' and answer instanceof T(com.example.booking.time_answer.TimeSlot)}">
-            <p
-                th:text="'Start Time: ' + ${#temporals.format(answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">
-                Start Time</p>
-            <p th:text="'End Time: ' + ${#temporals.format(answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}">
-                End Time</p>
-            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
-        </div>
-        <div
-            th:if="${question.type == 'number' and answer instanceof T(com.example.booking.number_answer.NumberAnswer)}">
-            <p th:text="${answer.minNum != null ? 'Minimum Number Input: ' + answer.minNum : 'No minimun number'}">
-                Minimum Number</p>
-            <p th:text="${answer.maxNum != null ? 'Maximum Number Input: ' + answer.maxNum : 'No maximum number'}">
-                Maximum Number</p>
-            <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
-        </div>
-        <div th:if="${question.type == 'text'}">
-            <p>Text answer (User will provide input later)</p>
-        </div>
-
-        <a th:if="${answer.nextQuestion}" th:href="@{/questions/{id}(id=${answer.nextQuestion.qId})}">Next Question</a>
-        <form th:if="${answer.nextQuestion == null}"
-            th:action="@{/questions/answers/{answerId}/nextquestion(answerId=${answer.aId})}" method="post">
-            <input type="text" name="text" placeholder="Next Question Text" required />
-            <select name="type">
-                <option value="choice">Choice</option>
-                <option value="date">Date</option>
-                <option value="time">Time</option>
-                <option value="text">Text</option>
-                <option value="number">Number</option>
-            </select>
-            <button type="submit">Add Next Question</button>
-        </form>
-    </div>
-
-    <h3 th:if="${question.type != 'text' and (question.type != 'number' or question.answers.isEmpty())}">Add Answer</h3>
-    <form
-        th:if="${question.type == 'choice' or question.type == 'date' or question.type == 'time' or (question.type == 'number' and question.answers.isEmpty())}"
-        th:action="@{/questions/{id}/answers(id=${question.qId})}" th:object="${newAnswer}" method="post">
-
-        <input th:if="${question.type == 'choice'}" type="text" th:field="*{text}" placeholder="Answer Text" required />
-
-        <div th:if="${question.type == 'date'}">
-            <div class="flatpickr-wrapper">
-                <input type="text" id="datePicker" name="date" placeholder="Select Date..." data-input required>
-                <a class="input-button" title="toggle" data-toggle>
-                    <i class="fa fa-calendar"></i>
-                </a>
-                <a class="input-button" title="clear" data-clear>
-                    <i class="fa fa-close"></i>
-                </a>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between w-100">
+                <div th:if="${parentQuestion != null}">
+                    <a th:href="@{/questions/{id}(id=${parentQuestion.qId})}" class="nav-link">
+                        <i class="fa fa-angle-left"></i> Previous Question
+                    </a>
+                </div>
+                <div>
+                    <a th:href="@{/questions}" class="nav-link">
+                        <i class="fa fa-home"></i> First Question
+                    </a>
+                </div>
             </div>
         </div>
-
-        <div th:if="${question.type == 'time'}">
-            <label for="startTimePicker">Start Time:</label>
-            <input type="time" id="startTimePicker" name="startTime" required />
-            <div id="startTimeError" class="error-message hidden">
-                <i class="fa fa-exclamation-circle"></i> Start time must be earlier than end time.
-            </div>
-            <label for="endTimePicker">End Time:</label>
-            <input type="time" id="endTimePicker" name="endTime" required />
-            <div id="endTimeError" class="error-message hidden">
-                <i class="fa fa-exclamation-circle"></i> End time must be later than start time.
+    </nav>
+    <div class="container mt-4 mb-3">
+        <h1 class="text-body-secondary">Question</h1>
+        <div class="d-flex align-items-center ">
+            <h5 class="mb-0 me-2">
+                <span th:text="${question.text}">Question text</span>
+            </h5>
+            <div class="btn-group">
+                <form th:action="@{/questions/{id}/edit(id=${question.qId})}" method="get">
+                    <button type="submit" class="btn btn-outline-success"><i class="fa fa-pencil"></i></button>
+                </form>
+                <form th:action="@{/questions/{id}/delete(id=${question.qId})}" method="post">
+                    <button type="submit" onclick="return confirm('Are you sure you want to delete this question?')"
+                        class="btn btn-outline-danger"><i class="fa fa-trash-o"></i></button>
+                </form>
             </div>
         </div>
+        <strong>
+            <p>Type:
+        </strong>
+        <span th:text="${question.type}">Question type </span></p>
 
-        <div th:if="${question.type == 'number' and !question.answers.isEmpty()}">
-            <h3>Current Number Answer</h3>
-            <div th:with="answer=${question.answers[0]}">
-                <p th:text="${answer.minNum != null ? 'Minimum Number Input: ' + answer.minNum : 'No minimum number'}">
-                    Minimum Number</p>
-                <p th:text="${answer.maxNum != null ? 'Maximum Number Input: ' + answer.maxNum : 'No maximum number'}">
-                    Maximum Number</p>
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <h2 class="text-body-secondary">Answers</h2>
+        <ol class="list-group list-group-numbered">
+            <li class="list-group-item" th:each="answer : ${question.answers}">
+                <div class="d-flex align-items-center ">
+                    <div
+                        th:if="${question.type == 'choice' and answer instanceof T(com.example.booking.choice_answer.ChoiceAnswer)}">
+                        <p th:text="${answer.text}" class="mb-0 me-2">Answer text</p>
+                    </div>
+                    <div
+                        th:if="${question.type == 'date' and answer instanceof T(com.example.booking.date_answer.DateAnswer)}">
+                        <p th:text="${answer.date}" class="mb-0 me-2">Date</p>
+                    </div>
+                    <div
+                        th:if="${question.type == 'time' and answer instanceof T(com.example.booking.time_answer.TimeSlot)}">
+                        <p th:text="'Start Time: ' + ${#temporals.format(answer.startTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}"
+                            class="mb-0 me-2">
+                            Start Time</p>
+                        <p th:text="'End Time: ' + ${#temporals.format(answer.endTime.toLocalTime(), 'h:mm a', #locale.ENGLISH)}"
+                            class="mb-0 me-2">
+                            End Time</p>
+                    </div>
+                    <div
+                        th:if="${question.type == 'number' and answer instanceof T(com.example.booking.number_answer.NumberAnswer)}">
+                        <p th:text="${answer.minNum != null ? 'Minimum Number Input: ' + answer.minNum : 'No minimun number'}"
+                            class="mb-0 me-2">
+                            Minimum Number</p>
+                        <p th:text="${answer.maxNum != null ? 'Maximum Number Input: ' + answer.maxNum : 'No maximum number'}"
+                            class="mb-0 me-2">
+                            Maximum Number</p>
+                    </div>
+                    <div th:if="${question.type == 'text'}">
+                        <p>Text answer (User will provide input later)</p>
+                    </div>
+                    <div class="btn-group" th:if="${question.type != 'text'}">
+                        <form th:action="@{/questions/answers/{answerId}/edit(answerId=${answer.aId})}" method="get">
+                            <button type="submit" class="btn btn-outline-success"><i class="fa fa-pencil"></i></button>
+                        </form>
+                        <form th:action="@{/questions/answers/{answerId}/delete(answerId=${answer.aId})}" method="post">
+                            <button type="submit"
+                                onclick="return confirm('Are you sure you want to delete this answer?')"
+                                class="btn btn-outline-danger"><i class="fa fa-trash-o"></i></button>
+                        </form>
+                    </div>
+                </div>
                 <p th:text="${answer.qty != null ? 'Quantity: ' + answer.qty : 'No quantity'}">Quantity</p>
-                
-                <!-- Optional: Add an edit button or form here -->
-            </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a th:if="${answer.nextQuestion}" th:href="@{/questions/{id}(id=${answer.nextQuestion.qId})}"
+                        class="btn btn-primary">Next Question <i class="fa fa-angle-double-right"></i></a>
+                </div>
+                <form th:if="${answer.nextQuestion == null}"
+                    th:action="@{/questions/answers/{answerId}/nextquestion(answerId=${answer.aId})}" method="post"
+                    class="row gx-2 align-items-center">
+                    <div class="col">
+                        <label class="visually-hidden">Next Question Text</label>
+                        <input type="text" name="text" placeholder="Next Question Text" class="form-control w-100"
+                            required />
+                    </div>
+                    <div class="col">
+                        <label class="visually-hidden">Type</label>
+                        <select name="type" class="form-select w-100">
+                            <option value="choice">Choice</option>
+                            <option value="date">Date</option>
+                            <option value="time">Time</option>
+                            <option value="text">Text</option>
+                            <option value="number">Number</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <button type="submit" class="btn btn-success w-50"><i class="fa fa-plus-circle"></i> Add Next
+                            Question</button>
+                    </div>
+                </form>
+            </li>
+        </ol>
+        <div class="mt-3 mb-5 p-3 bg-info bg-opacity-10 border border-info rounded-end">
+            <h3 th:if="${question.type != 'text' and (question.type != 'number' or question.answers.isEmpty())}"
+                class="text-body-secondary">Add Answer
+            </h3>
+            <form
+                th:if="${question.type == 'choice' or question.type == 'date' or question.type == 'time' or (question.type == 'number' and question.answers.isEmpty())}"
+                th:action="@{/questions/{id}/answers(id=${question.qId})}" th:object="${newAnswer}" method="post">
+
+                <div class="row mb-3" th:if="${question.type == 'choice'}">
+                    <label class="col-sm-2 col-form-label" for="text">Answer Text</label>
+                    <div class="col-sm-10">
+                        <input type="text" id="text" th:field="*{text}" class="form-control" placeholder="Answer Text"
+                            required />
+                    </div>
+                </div>
+
+                <div class="row mb-3" th:if="${question.type == 'date'}">
+                    <label class="col-sm-2 col-form-label">Select Date</label>
+                    <div class="col-sm-10">
+                        <div class="input-group flatpickr-wrapper">
+                            <input type="text" id="datePicker" name="date" class="form-control"
+                                placeholder="Select Date..." data-input required>
+                            <div class="input-group-append">
+                                <a class="btn btn-outline-primary" title="toggle" data-toggle>
+                                    <i class="fa fa-calendar"></i>
+                                </a>
+                                <a class="btn btn-outline-danger" title="clear" data-clear>
+                                    <i class="fa fa-close"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3" th:if="${question.type == 'number'}">
+                    <label class="col-sm-2 col-form-label" for="minNum">Minimum Number Input</label>
+                    <div class="col-sm-4">
+                        <input type="number" id="minNum" name="minNum" th:field="*{minNum}" class="form-control"
+                            placeholder="Min Number" required />
+                    </div>
+                    <label class="col-sm-2 col-form-label" for="maxNum">Maximum Number Input</label>
+                    <div class="col-sm-4">
+                        <input type="number" id="maxNum" name="maxNum" th:field="*{maxNum}" class="form-control"
+                            placeholder="Max Number" required />
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-sm-2 col-form-label" for="qty">Quantity</label>
+                    <div class="col-sm-10">
+                        <input type="number" id="qty" th:field="*{qty}" class="form-control"
+                            placeholder="Quantity (optional)" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-10">
+                        <button type="submit" class="btn btn-success"><i class="fa fa-plus-circle"></i> Add
+                            Answer</button>
+                    </div>
+                </div>
+            </form>
         </div>
+        <script th:if="${question.type == 'date'}">
+            document.addEventListener('DOMContentLoaded', function () {
+                const fpDate = flatpickr("#datePicker", {
+                    dateFormat: "Y-m-d",
+                    minDate: "today",
+                    onChange: function (selectedDates, dateStr, instance) {
+                        document.getElementById('datePicker').value = dateStr;
+                    }
+                });
 
-        <input type="number" th:field="*{qty}" placeholder="Quantity (optional)" />
-        <button type="submit">Add Answer</button>
-    </form>
+                document.querySelector("[data-toggle]").addEventListener("click", function () {
+                    fpDate.toggle();
+                });
 
-    <script th:if="${question.type == 'date'}">
-        document.addEventListener('DOMContentLoaded', function () {
-            const fpDate = flatpickr("#datePicker", {
-                dateFormat: "Y-m-d",
-                minDate: "today",
-                onChange: function (selectedDates, dateStr, instance) {
-                    document.getElementById('datePicker').value = dateStr;
-                }
+                document.querySelector("[data-clear]").addEventListener("click", function () {
+                    fpDate.clear();
+                });
             });
+        </script>
+        <script th:if="${question.type == 'time'}">
+            document.addEventListener('DOMContentLoaded', function () {
+                var startTimePickerElement = document.querySelector("#startTimePicker");
+                var endTimePickerElement = document.querySelector("#endTimePicker");
+                var startTimeErrorElement = document.querySelector("#startTimeError");
+                var endTimeErrorElement = document.querySelector("#endTimeError");
 
-            document.querySelector("[data-toggle]").addEventListener("click", function () {
-                fpDate.toggle();
-            });
+                function validateTimes() {
+                    var startTime = startTimePickerElement.value;
+                    var endTime = endTimePickerElement.value;
 
-            document.querySelector("[data-clear]").addEventListener("click", function () {
-                fpDate.clear();
-            });
-        });
-    </script>
-    <script th:if="${question.type == 'time'}">
-        document.addEventListener('DOMContentLoaded', function () {
-            var startTimePickerElement = document.querySelector("#startTimePicker");
-            var endTimePickerElement = document.querySelector("#endTimePicker");
-            var startTimeErrorElement = document.querySelector("#startTimeError");
-            var endTimeErrorElement = document.querySelector("#endTimeError");
-
-            function validateTimes() {
-                var startTime = startTimePickerElement.value;
-                var endTime = endTimePickerElement.value;
-
-                if (startTime && endTime) {
-                    if (endTime <= startTime) {
-                        endTimePickerElement.classList.add('error');
-                        endTimeErrorElement.classList.remove('hidden');
-                        startTimePickerElement.classList.add('error');
-                        startTimeErrorElement.classList.remove('hidden');
+                    if (startTime && endTime) {
+                        if (endTime <= startTime) {
+                            endTimePickerElement.classList.add('error');
+                            endTimeErrorElement.classList.remove('hidden');
+                            startTimePickerElement.classList.add('error');
+                            startTimeErrorElement.classList.remove('hidden');
+                        } else {
+                            endTimePickerElement.classList.remove('error');
+                            endTimeErrorElement.classList.add('hidden');
+                            startTimePickerElement.classList.remove('error');
+                            startTimeErrorElement.classList.add('hidden');
+                        }
                     } else {
                         endTimePickerElement.classList.remove('error');
                         endTimeErrorElement.classList.add('hidden');
                         startTimePickerElement.classList.remove('error');
                         startTimeErrorElement.classList.add('hidden');
                     }
-                } else {
-                    endTimePickerElement.classList.remove('error');
-                    endTimeErrorElement.classList.add('hidden');
-                    startTimePickerElement.classList.remove('error');
-                    startTimeErrorElement.classList.add('hidden');
                 }
-            }
 
-            endTimePickerElement.addEventListener('change', validateTimes);
-            startTimePickerElement.addEventListener('change', validateTimes);
-        });
-    </script>
-    <br />
-    <div th:if="${parentQuestion != null}">
-        <a th:href="@{/questions/{id}(id=${parentQuestion.qId})}">Back to Previous Question</a>
-    </div>
-    <div>
-        <a th:href="@{/questions}">Return to First Question</a>
+                endTimePickerElement.addEventListener('change', validateTimes);
+                startTimePickerElement.addEventListener('change', validateTimes);
+            });
+        </script>
+
     </div>
 </body>
 

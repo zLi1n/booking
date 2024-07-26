@@ -18,5 +18,7 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Answer a WHERE a.aId = :answerId")
     Optional<Answer> findByIdWithLock(@Param("answerId") Long answerId);
+    List<Answer> findByNextQuestion(Question question);
+    boolean existsByNextQuestionAndAIdNot(Question nextQuestion, Long aId);
 }
 

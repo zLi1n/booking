@@ -1,9 +1,11 @@
 package com.example.booking.question;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.booking.answer.Answer;
 import com.example.booking.answer.AnswerService;
@@ -194,5 +196,120 @@ public class QuestionController {
 
         return "redirect:/questions/" + savedQuestion.getqId();
     }
+
+    @GetMapping("/{id}/edit")
+    public String editQuestionForm(@PathVariable Long id, Model model) {
+        Optional<Question> questionOpt = questionService.getQuestionById(id);
+        if (questionOpt.isPresent()) {
+            model.addAttribute("question", questionOpt.get());
+            return "editQuestion";
+        }
+        return "redirect:/questions";
+    }
+
+    @PostMapping("/{id}/edit")
+    public String updateQuestion(@PathVariable Long id, @ModelAttribute Question updatedQuestion,
+            RedirectAttributes redirectAttributes) {
+        Optional<Question> questionOpt = questionService.getQuestionById(id);
+        if (questionOpt.isPresent()) {
+            Question question = questionOpt.get();
+            question.setText(updatedQuestion.getText());
+            questionService.saveQuestion(question);
+            redirectAttributes.addFlashAttribute("message", "Question updated successfully");
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Question not found");
+        }
+        return "redirect:/questions/" + id;
+    }
+
+    @GetMapping("/answers/{answerId}/edit")
+    public String editAnswerForm(@PathVariable Long answerId, Model model) {
+        Optional<Answer> answerOpt = answerService.getAnswerById(answerId);
+        if (answerOpt.isPresent()) {
+            Answer answer = answerOpt.get();
+            model.addAttribute("answer", answer);
+            model.addAttribute("questionType", answer.getQuestion().getType());
+            return "editAnswer";
+        }
+        return "redirect:/questions";
+    }
+
+    @PostMapping("/answers/{answerId}/edit")
+    public String updateAnswer(@PathVariable Long answerId,
+            @ModelAttribute Answer updatedAnswer,
+            @RequestParam(required = false) String text,
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            @RequestParam(required = false) Integer maxNum,
+            @RequestParam(required = false) Integer minNum) throws ParseException {
+        Optional<Answer> answerOpt = answerService.getAnswerById(answerId);
+        if (answerOpt.isPresent()) {
+            Answer answer = answerOpt.get();
+            String questionType = answer.getQuestion().getType();
+
+            switch (questionType) {
+                case "choice":
+                    ((ChoiceAnswer) answer).setText(text);
+                    break;
+                case "date":
+                    if (date != null && !date.isEmpty()) {
+                        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                        ((DateAnswer) answer).setDate(format.parse(date));
+                    }
+                    break;
+                case "time":
+                    if (startTime != null && !startTime.isEmpty() && endTime != null && !endTime.isEmpty()) {
+                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+                        ((TimeSlot) answer).setStartTime(timeFormat.parse(startTime));
+                        ((TimeSlot) answer).setEndTime(timeFormat.parse(endTime));
+                    }
+                    break;
+                case "number":
+                    ((NumberAnswer) answer).setMaxNum(maxNum);
+                    ((NumberAnswer) answer).setMinNum(minNum);
+                    break;
+            }
+
+            answer.setQty(updatedAnswer.getQty());
+            if (answer.getQty() != null && answer.getQty() > 0) {
+                answer.setRemainingQty(answer.getQty());
+            } else {
+                answer.setQty(null);
+                answer.setRemainingQty(null);
+            }
+
+            answerService.saveAnswer(answer);
+            return "redirect:/questions/" + answer.getQuestion().getqId();
+        }
+        return "redirect:/questions";
+    }
+
+    @PostMapping("/{id}/delete")
+public String deleteQuestion(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    try {
+        questionService.deleteQuestion(id);
+        redirectAttributes.addFlashAttribute("message", "Question deleted successfully");
+    } catch (DataIntegrityViolationException e) {
+        redirectAttributes.addFlashAttribute("error", e.getMessage());
+    }
+    return "redirect:/questions";
+}
+
+@PostMapping("/answers/{answerId}/delete")
+public String deleteAnswer(@PathVariable Long answerId, RedirectAttributes redirectAttributes) {
+    try {
+        Answer answer = answerService.getAnswerById(answerId)
+            .orElseThrow(() -> new RuntimeException("Answer not found"));
+        Long questionId = answer.getQuestion().getqId();
+        
+        answerService.deleteAnswer(answerId);
+        redirectAttributes.addFlashAttribute("message", "Answer deleted successfully");
+        return "redirect:/questions/" + questionId;
+    } catch (DataIntegrityViolationException e) {
+        redirectAttributes.addFlashAttribute("error", e.getMessage());
+        return "redirect:/questions";
+    }
+}
 
 }
