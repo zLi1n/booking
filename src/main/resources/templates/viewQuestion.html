@@ -144,7 +144,7 @@
                     <label class="col-sm-2 col-form-label">Select Date</label>
                     <div class="col-sm-10">
                         <div class="input-group flatpickr-wrapper">
-                            <input type="text" id="datePicker" name="date" class="form-control"
+                            <input type="text" id="datePicker" name="dates" class="form-control"
                                 placeholder="Select Date..." data-input required>
                             <div class="input-group-append">
                                 <a class="btn btn-outline-primary" title="toggle" data-toggle>
@@ -154,6 +154,23 @@
                                     <i class="fa fa-close"></i>
                                 </a>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3" th:if="${question.type == 'time'}">
+                    <label class="col-sm-2 col-form-label" for="startTimePicker">Start Time</label>
+                    <div class="col-sm-4">
+                        <input type="time" id="startTimePicker" name="startTime" class="form-control" required />
+                        <div id="startTimeError" class="error-message hidden">
+                            <i class="fa fa-exclamation-circle"></i> Start time must be earlier than end time.
+                        </div>
+                    </div>
+                    <label class="col-sm-2 col-form-label" for="endTimePicker">End Time</label>
+                    <div class="col-sm-4">
+                        <input type="time" id="endTimePicker" name="endTime" class="form-control" required />
+                        <div id="endTimeError" class="error-message hidden">
+                            <i class="fa fa-exclamation-circle"></i> End time must be later than start time.
                         </div>
                     </div>
                 </div>
@@ -191,6 +208,7 @@
         <script th:if="${question.type == 'date'}">
             document.addEventListener('DOMContentLoaded', function () {
                 const fpDate = flatpickr("#datePicker", {
+                    mode: "multiple",
                     dateFormat: "Y-m-d",
                     minDate: "today",
                     onChange: function (selectedDates, dateStr, instance) {

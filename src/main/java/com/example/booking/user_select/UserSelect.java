@@ -1,14 +1,7 @@
 package com.example.booking.user_select;
 
-import java.text.SimpleDateFormat;
-
 import com.example.booking.answer.Answer;
-import com.example.booking.choice_answer.ChoiceAnswer;
-import com.example.booking.date_answer.DateAnswer;
 import com.example.booking.detail.Detail;
-import com.example.booking.number_answer.NumberAnswer;
-import com.example.booking.time_answer.TimeSlot;
-
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;

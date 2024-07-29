@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import com.example.booking.user.User;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class BookingService {
     @Autowired
@@ -43,5 +45,11 @@ public class BookingService {
     public void deleteBooking(Long id) {
         bookingRepository.deleteById(id);
     }
-}
 
+    @Transactional
+    public void updateBookingStatus(Long bookingId, String status) {
+        Booking booking = getBookingById(bookingId);
+        booking.setStatus(status);
+        bookingRepository.save(booking);
+    }
+}

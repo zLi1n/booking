@@ -16,6 +16,7 @@ import com.example.booking.time_answer.TimeSlot;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -95,7 +96,7 @@ public class QuestionController {
     @PostMapping("/{id}/answers")
     public String addAnswer(@PathVariable Long id, @ModelAttribute Answer answer,
             @RequestParam(required = false) String text,
-            @RequestParam(required = false) String date,
+            @RequestParam(required = false) List<String> dates,
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime,
             @RequestParam(required = false) Integer maxNum,
@@ -118,20 +119,22 @@ public class QuestionController {
                 }
                 answerService.createAnswer(choiceAnswer);
             } else if ("date".equals(question.getType())) {
-                DateAnswer dateAnswer = new DateAnswer();
-                if (date != null && !date.isEmpty()) {
+                if (dates != null && !dates.isEmpty()) {
                     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-                    dateAnswer.setDate(format.parse(date));
+                    for (String dateStr : dates) {
+                        DateAnswer dateAnswer = new DateAnswer();
+                        dateAnswer.setDate(format.parse(dateStr));
+                        dateAnswer.setQty(answer.getQty());
+                        dateAnswer.setQuestion(question);
+                        if (dateAnswer.getQty() == null || dateAnswer.getQty() == 0) {
+                            dateAnswer.setQty(null);
+                            dateAnswer.setRemainingQty(null);
+                        } else {
+                            dateAnswer.setRemainingQty(dateAnswer.getQty());
+                        }
+                        answerService.createAnswer(dateAnswer);
+                    }
                 }
-                dateAnswer.setQty(answer.getQty());
-                dateAnswer.setQuestion(question);
-                if (dateAnswer.getQty() == null || dateAnswer.getQty() == 0) {
-                    dateAnswer.setQty(null);
-                    dateAnswer.setRemainingQty(null);
-                } else {
-                    dateAnswer.setRemainingQty(dateAnswer.getQty());
-                }
-                answerService.createAnswer(dateAnswer);
             } else if ("time".equals(question.getType())) {
                 TimeSlot timeSlot = new TimeSlot();
                 timeSlot.setQuestion(question);
