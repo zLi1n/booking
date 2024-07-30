@@ -21,6 +21,10 @@ import com.example.booking.answer.AnswerService;
 import com.example.booking.date_answer.DateAnswer;
 import com.example.booking.detail.Detail;
 import com.example.booking.detail.DetailService;
+import com.example.booking.display.Display;
+import com.example.booking.display.DisplayService;
+import com.example.booking.form.Form;
+import com.example.booking.form.FormService;
 import com.example.booking.number_answer.NumberAnswer;
 import com.example.booking.question.Question;
 import com.example.booking.question.QuestionService;
@@ -47,27 +51,43 @@ public class BookingController {
     private UserService userService;
     @Autowired
     private BookingValidationService bookingValidationService;
+    @Autowired
+    private FormService formService;
+    @Autowired
+    private DisplayService displayService;
 
     @GetMapping("/main")
-    public String bookingMain(@RequestParam Long userId, Model model) {
-        model.addAttribute("userId", userId);
-        return "bookingMain";
+    public String showBookingMain(@RequestParam Long userId, @RequestParam Long formId, Model model) {
+        Optional<Form> formOptional = formService.getFormById(formId);
+        if (formOptional.isPresent()) {
+            Display display = displayService.getDisplayByFormId(formId);
+            model.addAttribute("display", display);
+            model.addAttribute("userId", userId);
+            model.addAttribute("formId", formId);
+            return "bookingMain";
+        } else {
+            return "redirect:/error";
+        }
     }
 
     @GetMapping("/book")
-    public String bookNow(@RequestParam Long userId, Model model) {
+    public String bookNow(@RequestParam Long userId, @RequestParam Long formId, Model model) {
         User user = userService.getUserById(userId);
-        Booking booking = bookingService.createBooking(user);
-        return startBooking(booking.getbId(), model);
+        Optional<Form> formOpt = formService.getFormById(formId);
+        if (formOpt.isPresent()) {
+            Form form = formOpt.get();
+            Booking booking = bookingService.createBooking(user, form);
+            return startBooking(booking.getbId(), model);
+        } else {
+            return "redirect:/error";
+        }
     }
 
     @GetMapping("/start")
     public String startBooking(@RequestParam Long bookingId, Model model) {
-        Question firstQuestion = questionService.getFirstLevelQuestion();
-        if (firstQuestion == null) {
-            return "redirect:/questions/add";
-        }
-        return showQuestion(bookingId, firstQuestion.getqId(), model);
+        Booking booking = bookingService.getBookingById(bookingId);
+        Form form = booking.getForm();
+        return showQuestion(bookingId, form.getFirstQuestionId(), model);
     }
 
     @GetMapping("/question/{id}")
@@ -81,7 +101,7 @@ public class BookingController {
             if ("text".equals(question.getType())) {
                 model.addAttribute("isTextQuestion", true);
                 model.addAttribute("userAnswer", new UserAnswer());
-            }else {
+            } else {
                 List<Answer> allAnswers = answerService.getAnswersByQuestion(id);
                 List<Answer> availableAnswers = allAnswers.stream()
                         .filter(answer -> bookingValidationService.isAvailableAnswer(bookingId, answer))
@@ -97,7 +117,7 @@ public class BookingController {
                             } else if (answer instanceof TimeSlot) {
                                 TimeSlot timeSlot = (TimeSlot) answer;
                                 serializedAnswer.put("timeRange", timeSlot.getFormattedTimeRange());
-                            }  else if (answer instanceof NumberAnswer) {
+                            } else if (answer instanceof NumberAnswer) {
                                 NumberAnswer numberAnswer = (NumberAnswer) answer;
                                 serializedAnswer.put("maxNum", numberAnswer.getMaxNum());
                                 serializedAnswer.put("minNum", numberAnswer.getMinNum());
@@ -212,19 +232,21 @@ public class BookingController {
     }
 
     @GetMapping("/history")
-    public String viewHistory(@RequestParam Long userId, Model model) {
-        User user = userService.getUserById(userId);
-        List<Booking> bookings = bookingService.getBookingsByUser(user);
+public String viewHistory(@RequestParam Long userId, @RequestParam Long formId, Model model) {
+    User user = userService.getUserById(userId);
+    Form form = formService.getFormById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
+    List<Booking> bookings = bookingService.getBookingsByUserAndForm(user, form);
 
-        for (Booking booking : bookings) {
-            List<Detail> details = detailService.getDetailsByBooking(booking);
-            booking.setDetails(details);
-        }
-
-        model.addAttribute("user", user);
-        model.addAttribute("bookings", bookings);
-        return "history";
+    for (Booking booking : bookings) {
+        List<Detail> details = detailService.getDetailsByBooking(booking);
+        booking.setDetails(details);
     }
+
+    model.addAttribute("user", user);
+    model.addAttribute("form", form);
+    model.addAttribute("bookings", bookings);
+    return "history";
+}
 
     @GetMapping("/confirmation")
     public String showConfirmation(@RequestParam Long bookingId, Model model) {

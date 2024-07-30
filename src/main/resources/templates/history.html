@@ -10,9 +10,8 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
         <div class="container">
             <div class="d-flex justify-content-between w-100">
-                    <a th:href="@{/booking/book(userId=${user.uId})}" class="btn btn-primary">Start New Booking</a>
-                    <a th:href="@{/booking/main(userId=${user.uId})}" class="btn btn-secondary">Home</a>
-                
+                <a th:href="@{/booking/book(userId=${user.uId}, formId=${form.fId})}" class="btn btn-primary">Start New Booking</a>
+                <a th:href="@{/booking/main(userId=${user.uId}, formId=${form.fId})}" class="btn btn-secondary">Home</a>
             </div>
         </div>
     </nav>
@@ -65,8 +64,8 @@
         </div>
         <div class="d-grid col-3 mx-auto">
             <div class="btn-group">
-                <a th:href="@{/booking/book(userId=${user.uId})}" class="btn btn-primary">Start New Booking</a>
-                <a th:href="@{/booking/main(userId=${user.uId})}" class="btn btn-secondary">Home</a>
+                <a th:href="@{/booking/book(userId=${user.uId}, formId=${form.fId})}" class="btn btn-primary">Start New Booking</a>
+                <a th:href="@{/booking/main(userId=${user.uId}, formId=${form.fId})}" class="btn btn-secondary">Home</a>
             </div>
         </div>
     </div>

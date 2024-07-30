@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Forms</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-4 mb-3">
+        <h1>Forms</h1>
+        <a href="/forms/add" class="btn btn-success mb-3"><i class="fa fa-plus-circle"></i> Add New Form</a>
+        <a href="/admin/calendar" class="btn btn-secondary mb-3">View All Bookings</a>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="form : ${forms}">
+                    <td th:text="${form.title}"></td>
+                    <td>
+                        <a th:if="${form.firstQuestionId != null}" th:href="@{/questions/{id}(id=${form.firstQuestionId})}" class="btn btn-info">View</a>
+                        <a th:if="${form.firstQuestionId == null}" th:href="@{/questions/add(formId=${form.fId})}" class="btn btn-warning">Add First Question</a>
+                        <a th:href="@{/admin/calendar(formId=${form.fId})}" class="btn btn-primary">View Bookings</a>
+                        <a th:href="@{/admin/form/{formId}/edit-main-page(formId=${form.fId})}" class="btn btn-primary">Edit Booking Main Page</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

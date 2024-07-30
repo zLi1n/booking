@@ -11,6 +11,8 @@ import com.example.booking.answer.Answer;
 import com.example.booking.answer.AnswerService;
 import com.example.booking.choice_answer.ChoiceAnswer;
 import com.example.booking.date_answer.DateAnswer;
+import com.example.booking.form.Form;
+import com.example.booking.form.FormService;
 import com.example.booking.number_answer.NumberAnswer;
 import com.example.booking.time_answer.TimeSlot;
 
@@ -28,34 +30,36 @@ public class QuestionController {
     @Autowired
     private AnswerService answerService;
 
-    @GetMapping
-    public String viewFirstQuestion(Model model) {
-        Question firstQuestion = questionService.getFirstLevelQuestion();
-        if (firstQuestion == null) {
-            return "redirect:/questions/add";
-        }
-        return viewQuestion(firstQuestion.getqId(), model);
-    }
+    @Autowired
+    private FormService formService;
 
     @GetMapping("/add")
-    public String addQuestionForm(Model model) {
+    public String addQuestionForm(@RequestParam(required = false) Long formId, Model model) {
         model.addAttribute("question", new Question());
+        model.addAttribute("formId", formId);
         return "addQuestion";
     }
 
     @PostMapping("/add")
-    public String addQuestion(@ModelAttribute Question question) {
+    public String addQuestion(@ModelAttribute Question question, @RequestParam(required = false) Long formId) {
         if (question.getParent() == null) {
             question.setLevel(1);
         }
         Question savedQuestion = questionService.saveQuestion(question);
+
+        if (formId != null) {
+            Form form = formService.getFormById(formId).orElseThrow(() -> new RuntimeException("Form not found"));
+            form.setFirstQuestionId(savedQuestion.getqId());
+            formService.saveForm(form);
+        }
+
         if ("text".equals(savedQuestion.getType())) {
             Answer textAnswer = new Answer();
             textAnswer.setQuestion(savedQuestion);
             textAnswer.setQty(null);
             answerService.createAnswer(textAnswer);
         }
-        return "redirect:/questions";
+        return "redirect:/questions/" + savedQuestion.getqId();
     }
 
     @GetMapping("/{id}")
@@ -207,7 +211,7 @@ public class QuestionController {
             model.addAttribute("question", questionOpt.get());
             return "editQuestion";
         }
-        return "redirect:/questions";
+        return "redirect:/forms";
     }
 
     @PostMapping("/{id}/edit")
@@ -234,7 +238,7 @@ public class QuestionController {
             model.addAttribute("questionType", answer.getQuestion().getType());
             return "editAnswer";
         }
-        return "redirect:/questions";
+        return "redirect:/forms";
     }
 
     @PostMapping("/answers/{answerId}/edit")
@@ -285,34 +289,50 @@ public class QuestionController {
             answerService.saveAnswer(answer);
             return "redirect:/questions/" + answer.getQuestion().getqId();
         }
-        return "redirect:/questions";
+        return "redirect:/forms";
     }
 
     @PostMapping("/{id}/delete")
 public String deleteQuestion(@PathVariable Long id, RedirectAttributes redirectAttributes) {
     try {
-        questionService.deleteQuestion(id);
-        redirectAttributes.addFlashAttribute("message", "Question deleted successfully");
+        Optional<Question> questionOpt = questionService.getQuestionById(id);
+        if (questionOpt.isPresent()) {
+            Question question = questionOpt.get();
+            Long parentId = question.getParent() != null ? question.getParent().getqId() : null;
+            questionService.deleteQuestion(id);
+
+            redirectAttributes.addFlashAttribute("message", "Question deleted successfully");
+
+            if (parentId != null) {
+                return "redirect:/questions/" + parentId;
+            } else {
+                return "redirect:/forms";
+            }
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Question not found");
+            return "redirect:/forms";
+        }
     } catch (DataIntegrityViolationException e) {
         redirectAttributes.addFlashAttribute("error", e.getMessage());
+        return "redirect:/forms";
     }
-    return "redirect:/questions";
 }
 
-@PostMapping("/answers/{answerId}/delete")
-public String deleteAnswer(@PathVariable Long answerId, RedirectAttributes redirectAttributes) {
-    try {
-        Answer answer = answerService.getAnswerById(answerId)
-            .orElseThrow(() -> new RuntimeException("Answer not found"));
-        Long questionId = answer.getQuestion().getqId();
-        
-        answerService.deleteAnswer(answerId);
-        redirectAttributes.addFlashAttribute("message", "Answer deleted successfully");
-        return "redirect:/questions/" + questionId;
-    } catch (DataIntegrityViolationException e) {
-        redirectAttributes.addFlashAttribute("error", e.getMessage());
-        return "redirect:/questions";
+
+    @PostMapping("/answers/{answerId}/delete")
+    public String deleteAnswer(@PathVariable Long answerId, RedirectAttributes redirectAttributes) {
+        try {
+            Answer answer = answerService.getAnswerById(answerId)
+                    .orElseThrow(() -> new RuntimeException("Answer not found"));
+            Long questionId = answer.getQuestion().getqId();
+
+            answerService.deleteAnswer(answerId);
+            redirectAttributes.addFlashAttribute("message", "Answer deleted successfully");
+            return "redirect:/questions/" + questionId;
+        } catch (DataIntegrityViolationException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/forms";
+        }
     }
-}
 
 }

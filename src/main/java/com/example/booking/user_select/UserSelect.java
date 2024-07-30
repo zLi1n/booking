@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 @DiscriminatorValue("UserSelect")
 public class UserSelect extends Detail {
     @ManyToOne
-    @JoinColumn(name = "aId", nullable = false)
+    @JoinColumn(name = "aId", nullable = true)
     private Answer answer;
 
     private Integer qty;

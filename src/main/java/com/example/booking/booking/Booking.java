@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.example.booking.detail.Detail;
+import com.example.booking.form.Form;
 import com.example.booking.user.User;
 
 import jakarta.persistence.CascadeType;
@@ -32,6 +33,10 @@ public class Booking {
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Detail> details;
+
+    @ManyToOne
+    @JoinColumn(name = "fId", nullable = false)
+    private Form form;
 
     public Long getbId() {
         return bId;
@@ -71,6 +76,14 @@ public class Booking {
 
     public void setDetails(List<Detail> details) {
         this.details = details;
+    }
+
+    public Form getForm() {
+        return form;
+    }
+
+    public void setForm(Form form) {
+        this.form = form;
     }
 
 }

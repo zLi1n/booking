@@ -10,6 +10,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.booking.answer.Answer;
@@ -24,37 +25,55 @@ public class ShowBookingController {
     @Autowired
     private BookingService bookingService;
 
-    @GetMapping
-    public List<Map<String, Object>> getBookings() {
-        List<Booking> bookings = bookingService.getAllBookings();
-        List<Map<String, Object>> events = new ArrayList<>();
 
+    @GetMapping
+    public List<Map<String, Object>> getBookings(@RequestParam(required = false) Long formId) {
+        List<Booking> bookings;
+        if (formId != null) {
+            bookings = bookingService.getBookingsByFormId(formId);
+        } else {
+            bookings = bookingService.getAllBookings();
+        }
+        return convertBookingsToEvents(bookings);
+    }
+
+
+
+    private List<Map<String, Object>> convertBookingsToEvents(List<Booking> bookings) {
+        List<Map<String, Object>> events = new ArrayList<>();
         for (Booking booking : bookings) {
+            Date bookingDate = null;
+            TimeSlot bookingTimeSlot = null;
+
             for (Detail detail : booking.getDetails()) {
                 if (detail instanceof UserSelect) {
                     UserSelect userSelect = (UserSelect) detail;
                     Answer answer = userSelect.getAnswer();
-
                     if (answer instanceof DateAnswer) {
                         DateAnswer dateAnswer = (DateAnswer) answer;
-                        Map<String, Object> event = new HashMap<>();
-                        event.put("title", "Booking: " + booking.getUser().getName() + " (" + booking.getStatus() + ")");
-                        event.put("start", dateAnswer.getDate());
-                        event.put("url", "/admin/booking/" + booking.getbId());
-                        events.add(event);
+                        bookingDate = dateAnswer.getDate();
                     } else if (answer instanceof TimeSlot) {
-                        TimeSlot timeSlot = (TimeSlot) answer;
-                        Map<String, Object> event = new HashMap<>();
-                        event.put("title", "Booking: " + booking.getUser().getName() + " (" + booking.getStatus() + ")");
-                        event.put("start", combineDateTime(booking.getDate(), timeSlot.getStartTime()));
-                        event.put("end", combineDateTime(booking.getDate(), timeSlot.getEndTime()));
-                        event.put("url", "/admin/booking/" + booking.getbId());
-                        events.add(event);
+                        bookingTimeSlot = (TimeSlot) answer;
                     }
                 }
             }
-        }
 
+            if (bookingDate != null) {
+                Map<String, Object> event = new HashMap<>();
+                String formTitle = booking.getForm().getTitle();
+                event.put("title", formTitle + " booking: " + booking.getUser().getName() + " (" + booking.getStatus() + ")");
+                event.put("url", "/admin/booking/" + booking.getbId());
+
+                if (bookingTimeSlot != null) {
+                    event.put("start", combineDateTime(bookingDate, bookingTimeSlot.getStartTime()));
+                    event.put("end", combineDateTime(bookingDate, bookingTimeSlot.getEndTime()));
+                } else {
+                    event.put("start", bookingDate);
+                }
+
+                events.add(event);
+            }
+        }
         return events;
     }
 

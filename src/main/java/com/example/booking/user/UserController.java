@@ -9,11 +9,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.booking.form.Form;
+import com.example.booking.form.FormService;
+
 @Controller
 @RequestMapping("/users")
 public class UserController {
     @Autowired
     private UserService userService;
+    @Autowired
+    private FormService formService;
 
     @GetMapping("/signup")
     public String showSignupForm(Model model) {
@@ -21,11 +26,20 @@ public class UserController {
         return "signup";
     }
 
+    @GetMapping("/login")
+    public String showLoginForm(Model model) {
+        model.addAttribute("userLoginDTO", new UserLoginDTO());
+        return "login";
+    }
     @PostMapping("/signup")
     public String signup(@ModelAttribute UserSignupDTO userSignupDTO, RedirectAttributes redirectAttributes, Model model) {
         try {
             User savedUser = userService.signup(userSignupDTO);
             redirectAttributes.addAttribute("userId", savedUser.getuId());
+            Form firstForm = formService.getFirstForm();
+            if (firstForm != null) {
+                redirectAttributes.addAttribute("formId", firstForm.getfId());
+            }
             return "redirect:/booking/main";
         } catch (RuntimeException e) {
             model.addAttribute("errorMessage", e.getMessage());
@@ -33,17 +47,15 @@ public class UserController {
         }
     }
 
-    @GetMapping("/login")
-    public String showLoginForm(Model model) {
-        model.addAttribute("userLoginDTO", new UserLoginDTO());
-        return "login";
-    }
-
     @PostMapping("/login")
     public String login(@ModelAttribute UserLoginDTO userLoginDTO, RedirectAttributes redirectAttributes, Model model) {
         try {
             User user = userService.login(userLoginDTO);
             redirectAttributes.addAttribute("userId", user.getuId());
+            Form firstForm = formService.getFirstForm();
+            if (firstForm != null) {
+                redirectAttributes.addAttribute("formId", firstForm.getfId());
+            }
             return "redirect:/booking/main";
         } catch (RuntimeException e) {
             model.addAttribute("errorMessage", e.getMessage());

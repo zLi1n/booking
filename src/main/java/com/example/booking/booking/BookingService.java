@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.booking.form.Form;
 import com.example.booking.user.User;
 
 import jakarta.transaction.Transactional;
@@ -15,7 +16,7 @@ public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
 
-    public Booking createBooking(User user) {
+    public Booking createBooking(User user, Form form) {
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
         }
@@ -23,11 +24,16 @@ public class BookingService {
         booking.setUser(user);
         booking.setDate(new Date());
         booking.setStatus("pending");
+        booking.setForm(form);
         return bookingRepository.save(booking);
     }
 
     public Booking getBookingById(Long id) {
         return bookingRepository.findById(id).orElseThrow(() -> new RuntimeException("Booking not found"));
+    }
+
+    public List<Booking> getBookingsByFormId(Long formId) {
+        return bookingRepository.findByFormFId(formId);
     }
 
     public void saveBooking(Booking booking) {
@@ -51,5 +57,9 @@ public class BookingService {
         Booking booking = getBookingById(bookingId);
         booking.setStatus(status);
         bookingRepository.save(booking);
+    }
+
+    public List<Booking> getBookingsByUserAndForm(User user, Form form) {
+        return bookingRepository.findByUserAndForm(user, form);
     }
 }

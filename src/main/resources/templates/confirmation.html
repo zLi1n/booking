@@ -58,8 +58,8 @@
 
         <div class="d-grid col-3 mx-auto">
             <div class="btn-group">
-                <a th:href="@{/booking/book(userId=${user.uId})}" class="btn btn-primary">Start New Booking</a>
-                <a th:href="@{/booking/main(userId=${user.uId})}" class="btn btn-secondary">Home</a>
+                <a th:href="@{/booking/book(userId=${user.uId}, formId=${booking.getForm.getfId})}" class="btn btn-primary">Start New Booking</a>
+                <a th:href="@{/booking/main(userId=${user.uId}, formId=${booking.getForm.getfId})}" class="btn btn-secondary">Home</a>
             </div>
         </div>
     </div>
