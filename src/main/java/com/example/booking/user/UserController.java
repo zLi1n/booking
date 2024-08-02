@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.booking.form.Form;
@@ -21,46 +22,66 @@ public class UserController {
     private FormService formService;
 
     @GetMapping("/signup")
-    public String showSignupForm(Model model) {
-        model.addAttribute("userSignupDTO", new UserSignupDTO());
+public String showSignupForm(@RequestParam(required = false) Long formId, Model model) {
+    model.addAttribute("userSignupDTO", new UserSignupDTO());
+    model.addAttribute("formId", formId);
+    return "signup";
+}
+
+@GetMapping("/login")
+public String showLoginForm(@RequestParam(required = false) Long formId, Model model) {
+    model.addAttribute("userLoginDTO", new UserLoginDTO());
+    model.addAttribute("formId", formId);
+    return "login";
+}
+@PostMapping("/signup")
+public String signup(@ModelAttribute UserSignupDTO userSignupDTO, 
+                     @RequestParam(required = false) Long formId,
+                     RedirectAttributes redirectAttributes, 
+                     Model model) {
+    try {
+        User savedUser = userService.signup(userSignupDTO);
+        redirectAttributes.addAttribute("userId", savedUser.getuId());
+        
+        if (formId != null) {
+            redirectAttributes.addAttribute("formId", formId);
+        } else {
+            Form firstForm = formService.getFirstForm();
+            if (firstForm != null) {
+                redirectAttributes.addAttribute("formId", firstForm.getfId());
+            }
+        }
+        
+        return "redirect:/booking/main";
+    } catch (RuntimeException e) {
+        model.addAttribute("errorMessage", e.getMessage());
         return "signup";
     }
+}
 
-    @GetMapping("/login")
-    public String showLoginForm(Model model) {
-        model.addAttribute("userLoginDTO", new UserLoginDTO());
+@PostMapping("/login")
+public String login(@ModelAttribute UserLoginDTO userLoginDTO, 
+                    @RequestParam(required = false) Long formId,
+                    RedirectAttributes redirectAttributes, 
+                    Model model) {
+    try {
+        User user = userService.login(userLoginDTO);
+        redirectAttributes.addAttribute("userId", user.getuId());
+        
+        if (formId != null) {
+            redirectAttributes.addAttribute("formId", formId);
+        } else {
+            Form firstForm = formService.getFirstForm();
+            if (firstForm != null) {
+                redirectAttributes.addAttribute("formId", firstForm.getfId());
+            }
+        }
+        
+        return "redirect:/booking/main";
+    } catch (RuntimeException e) {
+        model.addAttribute("errorMessage", e.getMessage());
         return "login";
     }
-    @PostMapping("/signup")
-    public String signup(@ModelAttribute UserSignupDTO userSignupDTO, RedirectAttributes redirectAttributes, Model model) {
-        try {
-            User savedUser = userService.signup(userSignupDTO);
-            redirectAttributes.addAttribute("userId", savedUser.getuId());
-            Form firstForm = formService.getFirstForm();
-            if (firstForm != null) {
-                redirectAttributes.addAttribute("formId", firstForm.getfId());
-            }
-            return "redirect:/booking/main";
-        } catch (RuntimeException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            return "signup";
-        }
-    }
-
-    @PostMapping("/login")
-    public String login(@ModelAttribute UserLoginDTO userLoginDTO, RedirectAttributes redirectAttributes, Model model) {
-        try {
-            User user = userService.login(userLoginDTO);
-            redirectAttributes.addAttribute("userId", user.getuId());
-            Form firstForm = formService.getFirstForm();
-            if (firstForm != null) {
-                redirectAttributes.addAttribute("formId", firstForm.getfId());
-            }
-            return "redirect:/booking/main";
-        } catch (RuntimeException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            return "login";
-        }
-    }
+}
 }
 

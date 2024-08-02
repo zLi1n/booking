@@ -13,7 +13,8 @@
             <p th:text="${errorMessage}"></p>
         </div>
 
-        <form th:action="@{/users/login}" method="post" class="row g-0">
+        <form th:action="@{/users/login}" method="post" th:object="${userLoginDTO}">
+            <input type="hidden" name="formId" th:value="${formId}" />
             <div class="row mb-3">
                 <label for="email" class="col-sm-2 col-form-label">Email:</label>
                 <div class="col-sm-10">

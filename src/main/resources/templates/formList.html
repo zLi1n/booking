@@ -8,6 +8,8 @@
 <body>
     <div class="container mt-4 mb-3">
         <h1>Forms</h1>
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
         <a href="/forms/add" class="btn btn-success mb-3"><i class="fa fa-plus-circle"></i> Add New Form</a>
         <a href="/admin/calendar" class="btn btn-secondary mb-3">View All Bookings</a>
         <table class="table">
@@ -22,9 +24,15 @@
                     <td th:text="${form.title}"></td>
                     <td>
                         <a th:if="${form.firstQuestionId != null}" th:href="@{/questions/{id}(id=${form.firstQuestionId})}" class="btn btn-info">View</a>
+                        <a th:href="@{/forms/{formId}/structure-view(formId=${form.fId})}" class="btn btn-outline-secondary">View Structure</a>
                         <a th:if="${form.firstQuestionId == null}" th:href="@{/questions/add(formId=${form.fId})}" class="btn btn-warning">Add First Question</a>
                         <a th:href="@{/admin/calendar(formId=${form.fId})}" class="btn btn-primary">View Bookings</a>
-                        <a th:href="@{/admin/form/{formId}/edit-main-page(formId=${form.fId})}" class="btn btn-primary">Edit Booking Main Page</a>
+                        <a th:href="@{/admin/form/{formId}/edit-main-page(formId=${form.fId})}" class="btn btn-outline-primary">Edit Booking Main Page</a>
+                        <a th:href="@{/users/login(formId=${form.fId})}" class="btn btn-secondary" target="_blank">Login Page</a>
+                        <a th:href="@{/forms/{formId}/edit-title(formId=${form.fId})}" class="btn btn-outline-success"><i class="fa fa-pencil"></i> Edit Title</a>
+                        <form th:action="@{/forms/{formId}/delete(formId=${form.fId})}" method="post" class="d-inline">
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this form? \nThis action cannot be undone.')" class="btn btn-outline-danger"><i class="fa fa-trash-o"></i> Delete Form</button>
+                        </form>
                     </td>
                 </tr>
             </tbody>

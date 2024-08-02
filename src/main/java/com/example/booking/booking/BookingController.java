@@ -61,7 +61,9 @@ public class BookingController {
         Optional<Form> formOptional = formService.getFormById(formId);
         if (formOptional.isPresent()) {
             Display display = displayService.getDisplayByFormId(formId);
+            if (display != null) {
             model.addAttribute("display", display);
+            }
             model.addAttribute("userId", userId);
             model.addAttribute("formId", formId);
             return "bookingMain";

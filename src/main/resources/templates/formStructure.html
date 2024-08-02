@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Form Structure</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        #tree-container {
+            width: 100%;
+            height: 800px;
+            overflow: auto;
+            border: 1px solid #ccc;
+            cursor: move;
+        }
+
+        .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 3px;
+        }
+
+        .node text {
+            font: 12px sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 th:text="${form.title} + ' Structure'"></h1>
+    <div id="tree-container"></div>
+
+    <script th:inline="javascript">
+        const formId = /*[[${form.fId}]]*/ null;
+
+        fetch(`/forms/${formId}/structure`)
+            .then(response => response.json())
+            .then(data => createTree(data))
+            .catch(error => console.error('Error:', error));
+
+        function createTree(treeData) {
+            const margin = { top: 20, right: 120, bottom: 30, left: 120 };
+            const containerWidth = document.getElementById('tree-container').clientWidth;
+            const containerHeight = document.getElementById('tree-container').clientHeight;
+
+            d3.select("#tree-container").select("svg").remove();
+
+            const svg = d3.select("#tree-container").append("svg")
+                .attr("width", containerWidth)
+                .attr("height", containerHeight)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const tree = d3.tree().nodeSize([80, 200]);
+
+            const root = d3.hierarchy(treeData);
+            tree(root);
+
+            root.descendants().forEach(d => d.y = d.depth * 200);
+
+            svg.selectAll(".link")
+                .data(root.descendants().slice(1))
+                .enter().append("path")
+                .attr("class", "link")
+                .attr("d", d => `
+            M${d.y},${d.x}
+            C${(d.y + d.parent.y) / 2},${d.x}
+             ${(d.y + d.parent.y) / 2},${d.parent.x}
+             ${d.parent.y},${d.parent.x}
+        `);
+
+            const node = svg.selectAll(".node")
+                .data(root.descendants())
+                .enter().append("g")
+                .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
+                .attr("transform", d => `translate(${d.y},${d.x})`);
+
+            node.append("circle")
+                .attr("r", 5);
+
+            function wrap(text, width) {
+                text.each(function () {
+                    const textElement = d3.select(this);
+                    const textContent = textElement.text().split("\n");
+                    const mainText = textContent[0];
+                    const quantityText = textContent.length > 1 ? textContent[1] : '';
+
+                    const words = mainText.split(/\s+/).reverse();
+                    let line = [];
+                    let lineNumber = 0;
+                    const lineHeight = 1.1;
+                    const y = textElement.attr("y");
+                    const dy = parseFloat(textElement.attr("dy"));
+                    let tspan = textElement.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+
+                    let word;
+                    while (word = words.pop()) {
+                        line.push(word);
+                        tspan.text(line.join(" "));
+                        if (tspan.node().getComputedTextLength() > width) {
+                            line.pop();
+                            tspan.text(line.join(" "));
+                            line = [word];
+                            tspan = textElement.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                        }
+                    }
+
+                    if (quantityText) {
+                        textElement.append("tspan")
+                            .attr("x", 0)
+                            .attr("dy", (lineNumber + 1) * lineHeight + dy + "em")
+                            .text(quantityText);
+                    }
+                });
+            }
+
+            node.append("text")
+                .attr("dy", ".35em")
+                .attr("x", d => d.children ? -20 : 20)
+                .attr("y", 20) 
+                .style("text-anchor", "middle")
+                .text(d => {
+                    const name = d.data.name;
+                    const qty = d.data.qty ? `Quantity: ${d.data.qty}` : '';
+                    return `${name}\n${qty}`;
+                })
+                .call(wrap, 150);
+
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 3])
+                .on("zoom", (event) => {
+                    svg.attr("transform", event.transform);
+                });
+
+            d3.select("#tree-container").select("svg")
+                .call(zoom)
+                .call(zoom.translateTo, containerWidth / 2, containerHeight / 2)
+                .call(zoom.scaleTo, 0.8);
+                
+        }
+        
+    </script>
+</body>
+
+</html>

@@ -90,7 +90,10 @@ public class QuestionController {
             } else {
                 model.addAttribute("newAnswer", new Answer());
             }
-
+            Form form = formService.getFormByQuestionId(id);
+            if (form != null) {
+                model.addAttribute("form", form);
+            }
             return "viewQuestion";
         } else {
             return "redirect:/questions";
@@ -293,31 +296,30 @@ public class QuestionController {
     }
 
     @PostMapping("/{id}/delete")
-public String deleteQuestion(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    try {
-        Optional<Question> questionOpt = questionService.getQuestionById(id);
-        if (questionOpt.isPresent()) {
-            Question question = questionOpt.get();
-            Long parentId = question.getParent() != null ? question.getParent().getqId() : null;
-            questionService.deleteQuestion(id);
+    public String deleteQuestion(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Optional<Question> questionOpt = questionService.getQuestionById(id);
+            if (questionOpt.isPresent()) {
+                Question question = questionOpt.get();
+                Long parentId = question.getParent() != null ? question.getParent().getqId() : null;
+                questionService.deleteQuestion(id);
 
-            redirectAttributes.addFlashAttribute("message", "Question deleted successfully");
+                redirectAttributes.addFlashAttribute("message", "Question deleted successfully");
 
-            if (parentId != null) {
-                return "redirect:/questions/" + parentId;
+                if (parentId != null) {
+                    return "redirect:/questions/" + parentId;
+                } else {
+                    return "redirect:/forms";
+                }
             } else {
+                redirectAttributes.addFlashAttribute("error", "Question not found");
                 return "redirect:/forms";
             }
-        } else {
-            redirectAttributes.addFlashAttribute("error", "Question not found");
+        } catch (DataIntegrityViolationException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/forms";
         }
-    } catch (DataIntegrityViolationException e) {
-        redirectAttributes.addFlashAttribute("error", e.getMessage());
-        return "redirect:/forms";
     }
-}
-
 
     @PostMapping("/answers/{answerId}/delete")
     public String deleteAnswer(@PathVariable Long answerId, RedirectAttributes redirectAttributes) {
