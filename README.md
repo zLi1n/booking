@@ -27,7 +27,7 @@
 5. Calendar View:
    - View all bookings in a calendar format.
 7. Editing User Booking Main Page:
-   -Customize the banner, title, and description on the user booking main page.
+   - Customize the banner, title, and description on the user booking main page.
 
 ### Database Configuration
 Update the application.properties file with your MySQL configuration:
